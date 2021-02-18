@@ -15,11 +15,11 @@ public:
     virtual int init();
     virtual int move();
     virtual void cleanUp();
-    // GhostRacer* getGR();
+    GhostRacer* getGR() const;
 
 private:
-    // GhostRacer *gr;
-    // vector<Actor *> objects;
+    GhostRacer *m_gr;
+    std::vector<Actor *> m_objects;
 };
 
 #endif // STUDENTWORLD_H_
