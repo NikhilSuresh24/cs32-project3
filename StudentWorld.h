@@ -11,7 +11,10 @@
 class StudentWorld : public GameWorld
 {
 public:
+    // static vars
     static const int START_BONUS_PTS = 5000;
+    static const int START_SOULS_SAVED = 0;
+    static const int START_LAST_BORDER_Y = 0;
     static const int N_YELLOW_LINES = VIEW_HEIGHT / SPRITE_HEIGHT;
     static const int M_WHITE_LINES = VIEW_HEIGHT / (4 * SPRITE_HEIGHT);
     static constexpr double LEFT_EDGE = ROAD_CENTER - ROAD_WIDTH / 2;
@@ -19,21 +22,13 @@ public:
     static constexpr double MID_LEFT_X = LEFT_EDGE + ROAD_WIDTH / 3;
     static constexpr double MID_RIGHT_X = RIGHT_EDGE - ROAD_WIDTH / 3;
 
+    // constructor, destructor, essential methods
     StudentWorld(std::string assetPath);
     virtual ~StudentWorld();
     virtual int init();
     virtual int move();
     virtual void cleanUp();
 
-    void addYellowBorders(double height);
-    void addWhiteBorders(double height);
-
-    void initBorders();
-    void addBorders();
-    void addActors();
-    int soulsRequired();
-    void updateLastBorderY();
-    void setStats();
     GhostRacer *getGR() const;
 
 private:
@@ -42,6 +37,18 @@ private:
     int m_soulsSaved;
     int m_bonusPts;
     double m_lastBorderY;
+
+    // helper methods
+    void addYellowBorders(double height);
+    void addWhiteBorders(double height);
+    void initBorders();
+    void addBorders();
+    void addActors();
+    void updateLastBorderY();
+    void setStats();
+    void resetVars();
+    int soulsRequired() const;
+
 };
 
 #endif // STUDENTWORLD_H_

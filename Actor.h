@@ -11,6 +11,7 @@ class Actor : public GraphObject
 public:
     static constexpr double X_SCALE = 0.25;
     static constexpr double Y_SCALE = 0.6;
+    static const int NO_HP = -1;
 
     Actor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, bool isCAW, double startXSpeed, double startYSpeed, int imageID, double startX, double startY, int dir, double size, unsigned int depth, double startHP);
     virtual ~Actor();
@@ -36,7 +37,7 @@ public:
     virtual void onCollideWater() = 0;
     virtual void doSomething() = 0;
     virtual void move() = 0;
-    virtual void onDeath() = 0;
+    virtual void onDeath() const = 0;
 
 private:
     bool m_canCollideGR;
@@ -45,8 +46,9 @@ private:
     double m_horizSpeed;
     double m_vertSpeed;
     bool m_isAlive;
+    bool m_hasHp;
     int m_initHp;
-    int m_hp; // not every Actor has HP, but derived classes can determine whether to use this
+    int m_hp; 
     bool m_CAW;
 };
 
@@ -58,7 +60,6 @@ public:
     static const bool IS_CAW = true;
 
     static const int INIT_HP = 100;
-    static const int IMAGE_ID = IID_GHOST_RACER;
     static const int START_DIR = up; // degrees
     static const int REBOUND_RIGHT_DIR = 82;
     static const int REBOUND_LEFT_DIR = 98;
@@ -85,9 +86,9 @@ public:
     GhostRacer(StudentWorld *ptr);
     virtual ~GhostRacer();
 
-    int getWaterCount() const;
-    void incrementWaterCount();
-    void decrementWaterCount();
+    int getSprayCount() const;
+    void incrementSprayCount();
+    void decrementSprayCount();
     void onOil();
     void applyUserInput();
 
@@ -95,10 +96,10 @@ public:
     virtual void onCollideWater();
     virtual void doSomething();
     virtual void move();
-    virtual void onDeath();
+    virtual void onDeath() const;
 
 private:
-    int m_waterCount;
+    int m_sprayCount;
 };
 
 class StaticActor : public Actor
@@ -112,11 +113,9 @@ public:
     StaticActor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, int imageID, double startX, double startY, int dir, double size, double startHP);
     virtual ~StaticActor();
 
-    virtual void onCollideGR() = 0;
-    virtual void onCollideWater() = 0;
     virtual void doSomething();
     virtual void move();
-    virtual void onDeath() = 0;
+
 };
 
 class BorderLine : public StaticActor
@@ -133,6 +132,6 @@ public:
 
     virtual void onCollideGR();
     virtual void onCollideWater();
-    virtual void onDeath();
+    virtual void onDeath() const;
 };
 #endif // ACTOR_H_
