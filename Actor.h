@@ -28,6 +28,7 @@ public:
     void setHorizSpeed(double speed);
     void setVertSpeed(double speed);
     void setIsAlive(bool isAlive);
+    int getHP() const;
     void healHP(int heal);
     void takeDamage(int damage);
 
@@ -60,14 +61,13 @@ public:
     static const int IMAGE_ID = IID_GHOST_RACER;
     static const int START_DIR = up; // degrees
     static const int REBOUND_RIGHT_DIR = 82;
+    static const int REBOUND_LEFT_DIR = 98;
     static const int INIT_WATER_COUNT = 10;
     static const unsigned int DEPTH = 0;
 
     static constexpr double SIZE = 4;
     static constexpr double START_X = 128;
     static constexpr double START_Y = 32;
-    // static constexpr double LEFT_BOUNDARY_X = ROAD_CENTER - ROAD_WIDTH / 2;
-    // static constexpr double RIGHT_BOUNDARY_X = ROAD_CENTER + ROAD_WIDTH / 2;
     static constexpr double BORDER_DMG = 10;
     static constexpr double START_X_SPEED = 0;
     static constexpr double START_Y_SPEED = 0;
@@ -80,11 +80,12 @@ public:
     static constexpr double MIN_VERT_SPEED = -1;
     static constexpr double SPEED_INCREMENT = 1;
     static constexpr double MAX_SHIFT_PER_TICK = 4.0;
-    static constexpr double DEG_2_RAD = 180 / M_PI;
+    static constexpr double DEG_2_RAD = M_PI / 180;
 
     GhostRacer(StudentWorld *ptr);
     virtual ~GhostRacer();
 
+    int getWaterCount() const;
     void incrementWaterCount();
     void decrementWaterCount();
     void onOil();

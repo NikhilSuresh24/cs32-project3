@@ -68,13 +68,17 @@ void Actor::setIsAlive(bool isAlive)
     m_isAlive = isAlive;
 }
 
+int Actor::getHP() const
+{
+    return m_hp;
+}
 void Actor::takeDamage(int damage)
 {
     if (damage > 0)
     {
         m_hp -= damage;
     }
-    
+
     //TODO: this should only happen if the actor uses HP
     if (m_hp <= 0)
     {
@@ -102,6 +106,11 @@ void GhostRacer::incrementWaterCount()
 void GhostRacer::decrementWaterCount()
 {
     --m_waterCount;
+}
+
+int GhostRacer::getWaterCount() const
+{
+    return m_waterCount;
 }
 void GhostRacer::onOil()
 {
@@ -155,7 +164,7 @@ void GhostRacer::doSomething()
     else if (getX() >= StudentWorld::RIGHT_EDGE && getDirection() < up)
     {
         takeDamage(BORDER_DMG);
-        setDirection(REBOUND_RIGHT_DIR);
+        setDirection(REBOUND_LEFT_DIR);
         getWorld()->playSound(SOUND_VEHICLE_CRASH);
     }
     // get user input on direction
@@ -183,7 +192,7 @@ void GhostRacer::applyUserInput()
             break;
 
         case KEY_PRESS_RIGHT:
-            if (getDirection() < RIGHT_ANGLE_TURN_LIMIT)
+            if (getDirection() > RIGHT_ANGLE_TURN_LIMIT)
             {
                 setDirection(getDirection() - TURN_ANGLE_INCREMENT);
             }

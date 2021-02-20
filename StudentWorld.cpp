@@ -1,6 +1,10 @@
 #include "StudentWorld.h"
 #include "GameConstants.h"
 #include <string>
+
+#include <iostream>
+#include <sstream>
+#include <iomanip>
 using namespace std;
 
 GameWorld *createStudentWorld(string assetPath)
@@ -69,9 +73,11 @@ int StudentWorld::move()
         }
     }
 
+    // let the ghost racer move
+    m_gr->doSomething();
+
     // remove dead actors
-    auto it = m_objects.begin();
-    while (it != m_objects.end())
+    for (auto it = m_objects.begin(); it != m_objects.end();)
     {
         if (!(*it)->isAlive())
         {
@@ -85,10 +91,11 @@ int StudentWorld::move()
     }
 
     // update pos of last white border
-    updateLastBordY();
-    // TODO: add new actors
+    updateLastBorderY();
+    // add new actors
     addActors();
     //TODO: update status text
+    setStats();
 
     // decrease bonus points each tick
     if (m_bonusPts > 0)
@@ -103,15 +110,17 @@ int StudentWorld::move()
 void StudentWorld::cleanUp()
 {
     // delete all actors
-    for (auto it = m_objects.begin(); it != m_objects.end(); ++it)
+    for (auto it = m_objects.begin(); it != m_objects.end();)
     {
         delete *it;
+        it = m_objects.erase(it);
     }
 
     // delete GR
     if (m_gr != nullptr)
     {
         delete m_gr;
+        m_gr = nullptr;
     }
 }
 
@@ -130,7 +139,7 @@ void StudentWorld::initBorders()
     }
 }
 
-void StudentWorld::updateLastBordY()
+void StudentWorld::updateLastBorderY()
 {
     if (m_lastBorderY > 0)
     {
@@ -175,4 +184,18 @@ void StudentWorld::addWhiteBorders(double height)
     m_objects.push_back(midLeftBorder);
     m_objects.push_back(midRightBorder);
     m_lastBorderY = height;
+}
+
+void StudentWorld::setStats()
+{
+    ostringstream stats;
+    stats << "Score: " << getScore();
+    stats << setw(7) << "Lvl: " << getLevel();
+    stats << setw(14) << "Souls2Save: " << soulsRequired();
+    stats << setw(9) << "Lives: " << getLives();
+    stats << setw(10) << "Health: " << m_gr->getHP();
+    stats << setw(10) << "Sprays: " << m_gr->getWaterCount();
+    stats << setw(9) << "Bonus: " << m_bonusPts;
+
+    setGameStatText(stats.str());
 }

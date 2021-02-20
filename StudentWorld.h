@@ -32,7 +32,8 @@ public:
     void addBorders();
     void addActors();
     int soulsRequired();
-    void updateLastBordY();
+    void updateLastBorderY();
+    void setStats();
     GhostRacer *getGR() const;
 
 private:
