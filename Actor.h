@@ -16,8 +16,8 @@ public:
     Actor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, bool isCAW, double startXSpeed, double startYSpeed, int imageID, double startX, double startY, int dir, double size, unsigned int depth, double startHP);
     virtual ~Actor();
 
-    bool getCanCollideGR() const;
-    bool getCanCollideWater() const;
+    bool canCollideGR() const;
+    bool canCollideWater() const;
     StudentWorld *getWorld() const;
     double getHorizSpeed() const;
     double getVertSpeed() const;
@@ -48,7 +48,7 @@ private:
     bool m_isAlive;
     bool m_hasHp;
     int m_initHp;
-    int m_hp; 
+    int m_hp;
     bool m_CAW;
 };
 
@@ -115,7 +115,6 @@ public:
 
     virtual void doSomething();
     virtual void move();
-
 };
 
 class BorderLine : public StaticActor
@@ -125,10 +124,26 @@ public:
     static const bool CAN_COLLIDE_GR = false;
     static const bool CAN_COLLIDE_WATER = false;
     static constexpr double SIZE = 2;
-    static const int START_HP = -1; // no HP stat
 
     BorderLine(StudentWorld *ptr, int imageID, double startX, double startY);
     virtual ~BorderLine();
+
+    virtual void onCollideGR();
+    virtual void onCollideWater();
+    virtual void onDeath() const;
+};
+
+class OilSlick : public StaticActor
+{
+public:
+    static const int START_DIR = 0;
+    static const bool CAN_COLLIDE_GR = true;
+    static const bool CAN_COLLIDE_WATER = false;
+    static const int SIZE_LOWER_BOUND = 2;
+    static const int SIZE_UPPER_BOUND = 5;
+
+    OilSlick(StudentWorld *ptr, double startX, double startY);
+    virtual ~OilSlick();
 
     virtual void onCollideGR();
     virtual void onCollideWater();

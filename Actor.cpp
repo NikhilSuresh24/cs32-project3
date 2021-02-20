@@ -26,11 +26,11 @@ Actor::Actor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, bool is
 }
 Actor::~Actor() {}
 
-bool Actor::getCanCollideGR() const
+bool Actor::canCollideGR() const
 {
     return m_canCollideGR;
 }
-bool Actor::getCanCollideWater() const
+bool Actor::canCollideWater() const
 {
     return m_canColllideWater;
 }
@@ -257,7 +257,7 @@ void GhostRacer::move()
 }
 
 StaticActor::StaticActor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, int imageID, double startX, double startY, int dir, double size, double startHP = NO_HP)
-    : Actor(ptr, canCollideWater, canCollideWater, IS_CAW, START_X_SPEED, START_Y_SPEED, imageID, startX, startY, dir, size, DEPTH, startHP) {}
+    : Actor(ptr, canCollideGR, canCollideWater, IS_CAW, START_X_SPEED, START_Y_SPEED, imageID, startX, startY, dir, size, DEPTH, startHP) {}
 
 StaticActor::~StaticActor() {}
 
@@ -274,13 +274,13 @@ void StaticActor::doSomething()
     }
 
     // deal with GR collision
-    if (getCanCollideGR() && isOverlapping(*(getWorld()->getGR())))
+    if (canCollideGR() && isOverlapping(*(getWorld()->getGR())))
     {
         onCollideGR();
     }
 }
 
-/* Move Static Actor based on GR speed */ 
+/* Move Static Actor based on GR speed */
 void StaticActor::move()
 {
     // static actor's vert speed depends on ghost racer's vert speed
@@ -291,10 +291,22 @@ void StaticActor::move()
 }
 
 BorderLine::BorderLine(StudentWorld *ptr, int imageID, double startX, double startY)
-    : StaticActor(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, imageID, startX, startY, START_DIR, SIZE, START_HP) {}
+    : StaticActor(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, imageID, startX, startY, START_DIR, SIZE, Actor::NO_HP) {}
 BorderLine::~BorderLine() {}
 
 // Borderline does not collide with GR or water, has no death properties
 void BorderLine::onCollideGR() {}
 void BorderLine::onCollideWater() {}
 void BorderLine::onDeath() const {}
+
+OilSlick::OilSlick(StudentWorld *ptr, double startX, double startY)
+    : StaticActor(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, IID_OIL_SLICK, startX, startY, START_DIR, randInt(SIZE_LOWER_BOUND, SIZE_UPPER_BOUND), NO_HP) {}
+OilSlick::~OilSlick() {}
+
+void OilSlick::onCollideGR()
+{
+    getWorld()->playSound(SOUND_OIL_SLICK);
+    getWorld()->getGR()->onOil();
+}
+void OilSlick::onCollideWater() {}
+void OilSlick::onDeath() const {}

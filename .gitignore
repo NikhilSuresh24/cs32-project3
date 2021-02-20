@@ -1,3 +1,5 @@
 *.o
 Assets/*
 .vscode/*
+.DS_Store
+*.zip

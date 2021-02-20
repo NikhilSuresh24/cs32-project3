@@ -44,6 +44,8 @@ private:
     void initBorders();
     void addBorders();
     void addActors();
+    void addOilSlick();
+
     void updateLastBorderY();
     void setStats();
     void resetVars();

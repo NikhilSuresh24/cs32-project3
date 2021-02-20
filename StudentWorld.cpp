@@ -155,7 +155,7 @@ void StudentWorld::initBorders()
 /* Update Y position of last made white border */
 void StudentWorld::updateLastBorderY()
 {
-    // simulate last border's movement 
+    // simulate last border's movement
     if (m_lastBorderY > 0)
     {
         double vertSpeed = StaticActor::START_Y_SPEED - m_gr->getVertSpeed();
@@ -166,6 +166,7 @@ void StudentWorld::updateLastBorderY()
 void StudentWorld::addActors()
 {
     addBorders();
+    addOilSlick();
 }
 
 /* Add set of borders if enough space */
@@ -225,4 +226,15 @@ void StudentWorld::resetVars()
     m_bonusPts = START_BONUS_PTS;
     m_soulsSaved = START_SOULS_SAVED;
     m_lastBorderY = START_LAST_BORDER_Y;
+}
+
+void StudentWorld::addOilSlick()
+{
+    int chanceOilSlick = max(150 - getLevel() * 10, 40);
+    if (randInt(0, chanceOilSlick - 1) == 0)
+    {
+        double randX = randInt(LEFT_EDGE, RIGHT_EDGE);
+        OilSlick *oil = new OilSlick(this, randX, VIEW_HEIGHT);
+        m_objects.push_back(oil);
+    }
 }
