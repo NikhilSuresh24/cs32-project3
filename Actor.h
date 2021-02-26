@@ -57,7 +57,7 @@ public:
     static constexpr double START_Y_SPEED = 0;
 
     Agent(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, double startXSpeed, int imageID, double startX, double startY, int dir, double size, double startHP);
-    ~Agent();
+    virtual ~Agent();
 
     int getHP() const;
     void healHP(int heal);
@@ -100,7 +100,7 @@ public:
     virtual ~GhostRacer();
 
     int getSprayCount() const;
-    void incrementSprayCount();
+    void addSprays(int numSprays);
     void decrementSprayCount();
     void onOil();
     void applyUserInput();
@@ -169,7 +169,7 @@ public:
     static const bool CAN_COLLIDE_GR = true;
 
     Goodie(StudentWorld *ptr, bool canCollideWater, int imageID, double startX, double startY, int dir, double size, int scoreIncrement, int onCollectSound);
-    ~Goodie();
+    virtual ~Goodie();
 
     virtual void onCollideGR();
     virtual void incrementStat() = 0;
@@ -189,12 +189,54 @@ public:
     static const int ANG_SPEED = 10;
 
     Soul(StudentWorld *ptr, double startX, double startY);
-    ~Soul();
+    virtual ~Soul();
 
     virtual void incrementStat();
     virtual void onCollideWater();
     virtual void onDeath() const;
     virtual void move(); // must redine move to rotate soul
+};
+
+class DamageableGoodie : public Goodie
+{
+public:
+    static const bool CAN_COLLIDE_WATER = true;
+    static const int ON_COLLECT_SOUND = SOUND_GOT_GOODIE;
+
+    DamageableGoodie(StudentWorld *ptr, int imageID, double startX, double startY, int dir, double size, int scoreIncrement);
+    virtual ~DamageableGoodie();
+
+    virtual void onCollideWater();
+    virtual void onDeath() const;
+};
+
+//TODO: ADDED WITH ZOMBIE PED INTERACTIONS
+class HealGoodie : public DamageableGoodie
+{
+public:
+    static const int START_DIR = 0;
+    static constexpr double SIZE = 1.0;
+    static const int SCORE_INCREMENT = 250;
+    static const int HEALTH_INCREMENT = 10;
+
+    HealGoodie(StudentWorld *ptr, double startX, double startY);
+    virtual ~HealGoodie();
+
+    virtual void incrementStat();
+};
+
+class WaterGoodie : public DamageableGoodie
+{
+public:
+    static const int START_DIR = 90;
+    static constexpr double SIZE = 2.0;
+    static const int SCORE_INCREMENT = 50;
+    static const int SPRAY_INCREMENT = 10;
+
+    WaterGoodie(StudentWorld *ptr, double startX, double startY);
+    virtual ~WaterGoodie();
+
+    virtual void incrementStat();
 };
 
 #endif // ACTOR_H_

@@ -47,7 +47,9 @@ private:
     void addActors();
     void addOilSlick();
     void addSoul();
+    void addWaterGoodie();
     bool shouldCreateStaticActor(int chance);
+
 
     void updateLastBorderY();
     void setStats();

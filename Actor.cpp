@@ -121,9 +121,9 @@ GhostRacer::GhostRacer(StudentWorld *ptr)
 
 GhostRacer::~GhostRacer() {}
 
-void GhostRacer::incrementSprayCount()
+void GhostRacer::addSprays(int numSprays)
 {
-    ++m_sprayCount;
+    m_sprayCount += numSprays;
 }
 void GhostRacer::decrementSprayCount()
 {
@@ -333,4 +333,32 @@ void Soul::move()
 {
     StaticActor::move();
     setDirection(getDirection() - ANG_SPEED); // rotate soul
+}
+
+DamageableGoodie::DamageableGoodie(StudentWorld *ptr, int imageID, double startX, double startY, int dir, double size, int scoreIncrement)
+    : Goodie(ptr, CAN_COLLIDE_WATER, imageID, startX, startY, dir, size, scoreIncrement, ON_COLLECT_SOUND) {}
+DamageableGoodie::~DamageableGoodie() {}
+
+void DamageableGoodie::onCollideWater()
+{
+    setIsAlive(false);
+}
+void DamageableGoodie::onDeath() const {}
+
+HealGoodie::HealGoodie(StudentWorld *ptr, double startX, double startY)
+    : DamageableGoodie(ptr, IID_HEAL_GOODIE, startX, startY, START_DIR, SIZE, SCORE_INCREMENT) {}
+HealGoodie::~HealGoodie() {}
+
+void HealGoodie::incrementStat()
+{
+    getWorld()->getGR()->healHP(HEALTH_INCREMENT);
+}
+
+WaterGoodie::WaterGoodie(StudentWorld *ptr, double startX, double startY)
+    : DamageableGoodie(ptr, IID_HOLY_WATER_GOODIE, startX, startY, START_DIR, SIZE, SCORE_INCREMENT) {}
+WaterGoodie::~WaterGoodie() {}
+
+void WaterGoodie::incrementStat()
+{
+    getWorld()->getGR()->addSprays(SPRAY_INCREMENT);
 }

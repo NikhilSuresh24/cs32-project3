@@ -168,6 +168,7 @@ void StudentWorld::addActors()
     addBorders();
     addOilSlick();
     addSoul();
+    addWaterGoodie();
 }
 
 /* Add set of borders if enough space */
@@ -264,4 +265,14 @@ bool StudentWorld::shouldCreateStaticActor(int chance)
 {
     int upperBound = chance - 1;
     return randInt(0, upperBound) == 0;
+}
+
+void StudentWorld::addWaterGoodie()
+{
+    int chanceHolyWater = 100 + 10 * getLevel();
+    if (shouldCreateStaticActor(chanceHolyWater))
+    {
+        WaterGoodie *waterGoodie = new WaterGoodie(this, getRandomRoadX(), VIEW_HEIGHT);
+        m_objects.push_back(waterGoodie);
+    }
 }
