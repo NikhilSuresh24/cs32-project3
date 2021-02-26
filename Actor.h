@@ -73,21 +73,18 @@ class GhostRacer : public Agent
 public:
     static const bool CAN_COLLIDE_GR = false;
     static const bool CAN_COLLIDE_WATER = false;
-    // static const bool IS_CAW = true;
 
     static const int INIT_HP = 100;
     static const int START_DIR = up; // degrees
     static const int REBOUND_RIGHT_DIR = 82;
     static const int REBOUND_LEFT_DIR = 98;
     static const int INIT_WATER_COUNT = 10;
-    // static const unsigned int DEPTH = 0;
 
     static constexpr double SIZE = 4;
     static constexpr double START_X = 128;
     static constexpr double START_Y = 32;
     static constexpr double BORDER_DMG = 10;
     static constexpr double START_X_SPEED = 0;
-    // static constexpr double START_Y_SPEED = 0;
     static constexpr double TURN_ANGLE_INCREMENT = 8;
     static constexpr double LEFT_ANGLE_TURN_LIMIT = 114;
     static constexpr double RIGHT_ANGLE_TURN_LIMIT = 66;
@@ -165,4 +162,39 @@ public:
     virtual void onCollideWater();
     virtual void onDeath() const;
 };
+
+class Goodie : public StaticActor
+{
+public:
+    static const bool CAN_COLLIDE_GR = true;
+
+    Goodie(StudentWorld *ptr, bool canCollideWater, int imageID, double startX, double startY, int dir, double size, int scoreIncrement, int onCollectSound);
+    ~Goodie();
+
+    virtual void onCollideGR();
+    virtual void incrementStat() = 0;
+
+private:
+    int m_scoreIncrement;
+    int m_collectSound;
+};
+
+class Soul : public Goodie
+{
+public:
+    static const bool CAN_COLLIDE_WATER = false;
+    static constexpr double SIZE = 4.0;
+    static const int START_DIR = 0;
+    static const int SCORE_INCREMENT = 100;
+    static const int ANG_SPEED = 10;
+
+    Soul(StudentWorld *ptr, double startX, double startY);
+    ~Soul();
+
+    virtual void incrementStat();
+    virtual void onCollideWater();
+    virtual void onDeath() const;
+    virtual void move(); // must redine move to rotate soul
+};
+
 #endif // ACTOR_H_

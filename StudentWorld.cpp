@@ -167,6 +167,7 @@ void StudentWorld::addActors()
 {
     addBorders();
     addOilSlick();
+    addSoul();
 }
 
 /* Add set of borders if enough space */
@@ -231,12 +232,36 @@ void StudentWorld::resetVars()
 /* Add oil slick to top of screen based on level */
 void StudentWorld::addOilSlick()
 {
-    int chanceOilSlick = max(150 - getLevel() * 10, 40);
     // add oil slick based on chance at random X pos on road
-    if (randInt(0, chanceOilSlick - 1) == 0)
+    int chanceOilSlick = max(150 - getLevel() * 10, 40);
+    if (shouldCreateStaticActor(chanceOilSlick))
     {
-        double randX = randInt(LEFT_EDGE, RIGHT_EDGE);
-        OilSlick *oil = new OilSlick(this, randX, VIEW_HEIGHT);
+        OilSlick *oil = new OilSlick(this, getRandomRoadX(), VIEW_HEIGHT);
         m_objects.push_back(oil);
     }
+}
+
+void StudentWorld::soulSaved()
+{
+    m_soulsSaved++;
+}
+
+void StudentWorld::addSoul()
+{
+    if (shouldCreateStaticActor(100))
+    {
+        Soul *soul = new Soul(this, getRandomRoadX(), VIEW_HEIGHT);
+        m_objects.push_back(soul);
+    }
+}
+
+double StudentWorld::getRandomRoadX() const
+{
+    return randInt(LEFT_EDGE, RIGHT_EDGE);
+}
+
+bool StudentWorld::shouldCreateStaticActor(int chance)
+{
+    int upperBound = chance - 1;
+    return randInt(0, upperBound) == 0;
 }

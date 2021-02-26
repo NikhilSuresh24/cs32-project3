@@ -30,6 +30,7 @@ public:
     virtual void cleanUp();
 
     GhostRacer *getGR() const;
+    void soulSaved();
 
 private:
     GhostRacer *m_gr;
@@ -45,11 +46,14 @@ private:
     void addBorders();
     void addActors();
     void addOilSlick();
+    void addSoul();
+    bool shouldCreateStaticActor(int chance);
 
     void updateLastBorderY();
     void setStats();
     void resetVars();
     int soulsRequired() const;
+    double getRandomRoadX() const;
 
 };
 

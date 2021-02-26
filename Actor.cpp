@@ -305,3 +305,32 @@ void OilSlick::onCollideGR()
 // Oil slick does nothing on collision with water or on death
 void OilSlick::onCollideWater() {}
 void OilSlick::onDeath() const {}
+
+Goodie::Goodie(StudentWorld *ptr, bool canCollideWater, int imageID, double startX, double startY, int dir, double size, int scoreIncrement, int onCollectSound)
+    : StaticActor(ptr, CAN_COLLIDE_GR, canCollideWater, imageID, startX, startY, dir, size), m_scoreIncrement(scoreIncrement), m_collectSound(onCollectSound) {}
+Goodie::~Goodie() {}
+
+void Goodie::onCollideGR()
+{
+    incrementStat();
+    setIsAlive(false);
+    getWorld()->playSound(m_collectSound);
+    getWorld()->increaseScore(m_scoreIncrement);
+}
+
+Soul::Soul(StudentWorld *ptr, double startX, double startY)
+    : Goodie(ptr, CAN_COLLIDE_WATER, IID_SOUL_GOODIE, startX, startY, START_DIR, SIZE, SCORE_INCREMENT, SOUND_GOT_SOUL) {}
+Soul::~Soul() {}
+
+void Soul::incrementStat()
+{
+    getWorld()->soulSaved();
+}
+
+void Soul::onCollideWater() {}
+void Soul::onDeath() const {}
+void Soul::move()
+{
+    StaticActor::move();
+    setDirection(getDirection() - ANG_SPEED); // rotate soul
+}
