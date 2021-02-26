@@ -13,7 +13,7 @@ public:
     static constexpr double Y_SCALE = 0.6;
     static const int NO_HP = -1;
 
-    Actor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, bool isCAW, double startXSpeed, double startYSpeed, int imageID, double startX, double startY, int dir, double size, unsigned int depth, double startHP);
+    Actor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, bool isCAW, double startXSpeed, double startYSpeed, int imageID, double startX, double startY, int dir, double size, unsigned int depth);
     virtual ~Actor();
 
     bool canCollideGR() const;
@@ -29,9 +29,6 @@ public:
     void setHorizSpeed(double speed);
     void setVertSpeed(double speed);
     void setIsAlive(bool isAlive);
-    int getHP() const;
-    void healHP(int heal);
-    void takeDamage(int damage);
 
     virtual void onCollideGR() = 0;
     virtual void onCollideWater() = 0;
@@ -52,26 +49,45 @@ private:
     bool m_CAW;
 };
 
-class GhostRacer : public Actor
+class Agent : public Actor
+{
+public:
+    static const bool IS_CAW = true;
+    static const unsigned int DEPTH = 0;
+    static constexpr double START_Y_SPEED = 0;
+
+    Agent(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, double startXSpeed, int imageID, double startX, double startY, int dir, double size, double startHP);
+    ~Agent();
+
+    int getHP() const;
+    void healHP(int heal);
+    void takeDamage(int damage);
+
+private:
+    int m_initHp;
+    int m_hp;
+};
+
+class GhostRacer : public Agent
 {
 public:
     static const bool CAN_COLLIDE_GR = false;
     static const bool CAN_COLLIDE_WATER = false;
-    static const bool IS_CAW = true;
+    // static const bool IS_CAW = true;
 
     static const int INIT_HP = 100;
     static const int START_DIR = up; // degrees
     static const int REBOUND_RIGHT_DIR = 82;
     static const int REBOUND_LEFT_DIR = 98;
     static const int INIT_WATER_COUNT = 10;
-    static const unsigned int DEPTH = 0;
+    // static const unsigned int DEPTH = 0;
 
     static constexpr double SIZE = 4;
     static constexpr double START_X = 128;
     static constexpr double START_Y = 32;
     static constexpr double BORDER_DMG = 10;
     static constexpr double START_X_SPEED = 0;
-    static constexpr double START_Y_SPEED = 0;
+    // static constexpr double START_Y_SPEED = 0;
     static constexpr double TURN_ANGLE_INCREMENT = 8;
     static constexpr double LEFT_ANGLE_TURN_LIMIT = 114;
     static constexpr double RIGHT_ANGLE_TURN_LIMIT = 66;
@@ -110,7 +126,7 @@ public:
     static constexpr double START_Y_SPEED = -4;
     static const unsigned int DEPTH = 2;
 
-    StaticActor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, int imageID, double startX, double startY, int dir, double size, double startHP);
+    StaticActor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, int imageID, double startX, double startY, int dir, double size);
     virtual ~StaticActor();
 
     virtual void doSomething();

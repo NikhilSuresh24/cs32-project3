@@ -228,9 +228,11 @@ void StudentWorld::resetVars()
     m_lastBorderY = START_LAST_BORDER_Y;
 }
 
+/* Add oil slick to top of screen based on level */
 void StudentWorld::addOilSlick()
 {
     int chanceOilSlick = max(150 - getLevel() * 10, 40);
+    // add oil slick based on chance at random X pos on road
     if (randInt(0, chanceOilSlick - 1) == 0)
     {
         double randX = randInt(LEFT_EDGE, RIGHT_EDGE);

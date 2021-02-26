@@ -19,10 +19,9 @@ using namespace std;
  * @param depth: determines which actor gets screen priority
  * @param startHP: initial HP of actor (-1 if doesn't have HP)
  */
-Actor::Actor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, bool isCAW, double startXSpeed, double startYSpeed, int imageID, double startX, double startY, int dir, double size, unsigned int depth, double startHP = NO_HP)
-    : GraphObject(imageID, startX, startY, dir, size, depth), m_worldPtr(ptr), m_canCollideGR(canCollideGR), m_canColllideWater(canCollideWater), m_CAW(isCAW), m_horizSpeed(startXSpeed), m_isAlive(true), m_vertSpeed(startYSpeed), m_initHp(startHP), m_hp(startHP)
+Actor::Actor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, bool isCAW, double startXSpeed, double startYSpeed, int imageID, double startX, double startY, int dir, double size, unsigned int depth)
+    : GraphObject(imageID, startX, startY, dir, size, depth), m_worldPtr(ptr), m_canCollideGR(canCollideGR), m_canColllideWater(canCollideWater), m_CAW(isCAW), m_horizSpeed(startXSpeed), m_isAlive(true), m_vertSpeed(startYSpeed)
 {
-    m_hasHp = (m_initHp > 0) ? true : false; // actor only uses HP if its initial HP is above 0
 }
 Actor::~Actor() {}
 
@@ -84,48 +83,41 @@ void Actor::setIsAlive(bool isAlive)
     m_isAlive = isAlive;
 }
 
-int Actor::getHP() const
+Agent::Agent(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, double startXSpeed, int imageID, double startX, double startY, int dir, double size, double startHP)
+    : Actor(ptr, canCollideGR, canCollideWater, IS_CAW, startXSpeed, START_Y_SPEED, imageID, startX, startY, dir, size, DEPTH), m_hp(startHP), m_initHp(startHP) {}
+Agent::~Agent() {}
+
+int Agent::getHP() const
 {
     return m_hp;
 }
-
-void Actor::takeDamage(int damage)
+void Agent::healHP(int heal)
 {
-    // deal damage if actor uses HP
-    if (m_hasHp)
-    {
-        if (damage > 0)
-        {
-            m_hp -= damage;
-        }
-
-        // if out of HP, set to dead
-        if (m_hp <= 0)
-        {
-            setIsAlive(false);
-        }
-    }
-}
-
-void Actor::healHP(int heal)
-{
-    // set HP to min of initial health and current health + heal
-    if (m_hasHp && heal > 0)
+    // only heal if amt > 0
+    if (heal > 0)
     {
         int newHp = m_hp + heal;
-        if (newHp > m_initHp)
-        {
-            m_hp = m_initHp;
-        }
-        else
-        {
-            m_hp = newHp;
-        }
+        // heal up to max of init hp
+        m_hp = (newHp > m_initHp) ? m_initHp : newHp;
+    }
+}
+void Agent::takeDamage(int damage)
+{
+    // deal damage
+    if (damage > 0)
+    {
+        m_hp -= damage;
+    }
+
+    // if out of HP, set to dead
+    if (m_hp <= 0)
+    {
+        setIsAlive(false);
     }
 }
 
 GhostRacer::GhostRacer(StudentWorld *ptr)
-    : Actor(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, IS_CAW, START_X_SPEED, START_Y_SPEED, IID_GHOST_RACER, START_X, START_Y, START_DIR, SIZE, DEPTH, INIT_HP), m_sprayCount(INIT_WATER_COUNT) {}
+    : Agent(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, START_X_SPEED, IID_GHOST_RACER, START_X, START_Y, START_DIR, SIZE, INIT_HP), m_sprayCount(INIT_WATER_COUNT) {}
 
 GhostRacer::~GhostRacer() {}
 
@@ -256,8 +248,8 @@ void GhostRacer::move()
     moveTo(getX() + deltaX, getY());
 }
 
-StaticActor::StaticActor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, int imageID, double startX, double startY, int dir, double size, double startHP = NO_HP)
-    : Actor(ptr, canCollideGR, canCollideWater, IS_CAW, START_X_SPEED, START_Y_SPEED, imageID, startX, startY, dir, size, DEPTH, startHP) {}
+StaticActor::StaticActor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, int imageID, double startX, double startY, int dir, double size)
+    : Actor(ptr, canCollideGR, canCollideWater, IS_CAW, START_X_SPEED, START_Y_SPEED, imageID, startX, startY, dir, size, DEPTH) {}
 
 StaticActor::~StaticActor() {}
 
@@ -291,7 +283,7 @@ void StaticActor::move()
 }
 
 BorderLine::BorderLine(StudentWorld *ptr, int imageID, double startX, double startY)
-    : StaticActor(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, imageID, startX, startY, START_DIR, SIZE, Actor::NO_HP) {}
+    : StaticActor(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, imageID, startX, startY, START_DIR, SIZE) {}
 BorderLine::~BorderLine() {}
 
 // Borderline does not collide with GR or water, has no death properties
@@ -300,13 +292,16 @@ void BorderLine::onCollideWater() {}
 void BorderLine::onDeath() const {}
 
 OilSlick::OilSlick(StudentWorld *ptr, double startX, double startY)
-    : StaticActor(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, IID_OIL_SLICK, startX, startY, START_DIR, randInt(SIZE_LOWER_BOUND, SIZE_UPPER_BOUND), NO_HP) {}
+    : StaticActor(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, IID_OIL_SLICK, startX, startY, START_DIR, randInt(SIZE_LOWER_BOUND, SIZE_UPPER_BOUND)) {}
 OilSlick::~OilSlick() {}
 
+/* Oil Slick action on collision with Ghost Racer*/
 void OilSlick::onCollideGR()
 {
     getWorld()->playSound(SOUND_OIL_SLICK);
     getWorld()->getGR()->onOil();
 }
+
+// Oil slick does nothing on collision with water or on death
 void OilSlick::onCollideWater() {}
 void OilSlick::onDeath() const {}
