@@ -34,8 +34,7 @@ public:
     virtual void onCollideGR() = 0;
     virtual void onCollideWater() = 0;
     virtual void doSomething() = 0;
-    virtual void move() = 0;
-    virtual void onDeath() const = 0;
+    virtual void move();
 
 private:
     bool m_canCollideGR;
@@ -110,13 +109,12 @@ public:
     virtual void onCollideWater();
     virtual void doSomething();
     virtual void move();
-    virtual void onDeath() const;
 
 private:
     int m_sprayCount;
 };
 
-// TODO: Move method should be in actor (since same alg used by pedestrian)
+
 class StaticActor : public Actor
 {
 public:
@@ -129,7 +127,6 @@ public:
     virtual ~StaticActor();
 
     virtual void doSomething();
-    virtual void move();
 };
 
 class BorderLine : public StaticActor
@@ -145,7 +142,6 @@ public:
 
     virtual void onCollideGR();
     virtual void onCollideWater();
-    virtual void onDeath() const;
 };
 
 class OilSlick : public StaticActor
@@ -162,7 +158,6 @@ public:
 
     virtual void onCollideGR();
     virtual void onCollideWater();
-    virtual void onDeath() const;
 };
 
 class Goodie : public StaticActor
@@ -195,8 +190,7 @@ public:
 
     virtual void incrementStat();
     virtual void onCollideWater();
-    virtual void onDeath() const;
-    virtual void move(); // must redine move to rotate soul
+    virtual void move(); // must redefine move to rotate soul
 };
 
 class DamageableGoodie : public Goodie
@@ -209,10 +203,8 @@ public:
     virtual ~DamageableGoodie();
 
     virtual void onCollideWater();
-    virtual void onDeath() const;
 };
 
-//TODO: ADDED WITH ZOMBIE PED INTERACTIONS
 class HealGoodie : public DamageableGoodie
 {
 public:
@@ -262,8 +254,6 @@ public:
     virtual ~Pedestrian();
 
     virtual void doSomething();
-    virtual void move();
-    virtual void onDeath() const; //TODO: Consider getting rid of onDeath
     virtual void aggroGR() = 0;   // only used by Zombie Ped
 
 private:

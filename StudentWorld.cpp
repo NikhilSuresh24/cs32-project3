@@ -72,7 +72,7 @@ int StudentWorld::move()
             if (!m_gr->isAlive())
             {
                 decLives();
-                m_gr->onDeath();
+                playSound(SOUND_PLAYER_DIE);
                 return GWSTATUS_PLAYER_DIED;
             }
 
@@ -94,7 +94,6 @@ int StudentWorld::move()
     {
         if (!(*it)->isAlive())
         {
-            (*it)->onDeath();
             delete *it;
             it = m_objects.erase(it);
         }

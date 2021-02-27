@@ -88,6 +88,15 @@ void Actor::setIsAlive(bool isAlive)
     m_isAlive = isAlive;
 }
 
+void Actor::move()
+{
+    // actor's vert speed depends on ghost racer's vert speed
+    double newVertSpeed = getVertSpeed() - getWorld()->getGR()->getVertSpeed();
+    double newY = getY() + newVertSpeed;
+    double newX = getX() + getHorizSpeed();
+    moveTo(newX, newY);
+}
+
 Agent::Agent(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, double startYSpeed, int imageID, double startX, double startY, int dir, double size, double startHP)
     : Actor(ptr, canCollideGR, canCollideWater, IS_CAW, START_X_SPEED, startYSpeed, imageID, startX, startY, dir, size, DEPTH), m_hp(startHP), m_initHp(startHP) {}
 Agent::~Agent() {}
@@ -166,10 +175,6 @@ void GhostRacer::onOil()
     {
         setDirection(newDir);
     }
-}
-void GhostRacer::onDeath() const
-{
-    getWorld()->playSound(SOUND_PLAYER_DIE);
 }
 
 // Ghost racer does not interact with itself or holy water
@@ -271,20 +276,10 @@ void StaticActor::doSomething()
     }
 
     // deal with GR collision
-    if (canCollideGR() && isOverlapping(*(getWorld()->getGR())))
+    if (canCollideGR() && isOverlappingGR())
     {
         onCollideGR();
     }
-}
-
-/* Move Static Actor based on GR speed */
-void StaticActor::move()
-{
-    // static actor's vert speed depends on ghost racer's vert speed
-    double newVertSpeed = getVertSpeed() - getWorld()->getGR()->getVertSpeed();
-    double newY = getY() + newVertSpeed;
-    double newX = getX() + getHorizSpeed();
-    moveTo(newX, newY);
 }
 
 BorderLine::BorderLine(StudentWorld *ptr, int imageID, double startX, double startY)
@@ -294,7 +289,6 @@ BorderLine::~BorderLine() {}
 // Borderline does not collide with GR or water, has no death properties
 void BorderLine::onCollideGR() {}
 void BorderLine::onCollideWater() {}
-void BorderLine::onDeath() const {}
 
 OilSlick::OilSlick(StudentWorld *ptr, double startX, double startY)
     : StaticActor(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, IID_OIL_SLICK, startX, startY, START_DIR, randInt(SIZE_LOWER_BOUND, SIZE_UPPER_BOUND)) {}
@@ -309,7 +303,6 @@ void OilSlick::onCollideGR()
 
 // Oil slick does nothing on collision with water or on death
 void OilSlick::onCollideWater() {}
-void OilSlick::onDeath() const {}
 
 Goodie::Goodie(StudentWorld *ptr, bool canCollideWater, int imageID, double startX, double startY, int dir, double size, int scoreIncrement, int onCollectSound)
     : StaticActor(ptr, CAN_COLLIDE_GR, canCollideWater, imageID, startX, startY, dir, size), m_scoreIncrement(scoreIncrement), m_collectSound(onCollectSound) {}
@@ -333,10 +326,9 @@ void Soul::incrementStat()
 }
 
 void Soul::onCollideWater() {}
-void Soul::onDeath() const {}
 void Soul::move()
 {
-    StaticActor::move();
+    Actor::move();
     setDirection(getDirection() - ANG_SPEED); // rotate soul
 }
 
@@ -348,7 +340,6 @@ void DamageableGoodie::onCollideWater()
 {
     setIsAlive(false);
 }
-void DamageableGoodie::onDeath() const {}
 
 HealGoodie::HealGoodie(StudentWorld *ptr, double startX, double startY)
     : DamageableGoodie(ptr, IID_HEAL_GOODIE, startX, startY, START_DIR, SIZE, SCORE_INCREMENT) {}
@@ -394,16 +385,6 @@ void Pedestrian::doSomething()
     setMovementPlan();
 }
 
-//TODO: should be moved to actor class
-void Pedestrian::move()
-{
-    // static actor's vert speed depends on ghost racer's vert speed
-    double newVertSpeed = getVertSpeed() - getWorld()->getGR()->getVertSpeed();
-    double newY = getY() + newVertSpeed;
-    double newX = getX() + getHorizSpeed();
-    moveTo(newX, newY);
-}
-void Pedestrian::onDeath() const {}
 void Pedestrian::setMovementPlan()
 {
     if (m_movementPlan > 0)
