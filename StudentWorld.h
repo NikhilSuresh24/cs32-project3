@@ -31,6 +31,10 @@ public:
 
     GhostRacer *getGR() const;
     void soulSaved();
+    void endLevel();
+    void humanHit();
+    void resetHumanHit();
+    void addActor(Actor *actor);
 
 private:
     GhostRacer *m_gr;
@@ -38,6 +42,7 @@ private:
     int m_soulsSaved;
     int m_bonusPts;
     double m_lastBorderY;
+    bool m_isHumanHit;
 
     // helper methods
     void addYellowBorders(double height);
@@ -48,15 +53,16 @@ private:
     void addOilSlick();
     void addSoul();
     void addWaterGoodie();
-    bool shouldCreateStaticActor(int chance);
-
+    void addHuman();
+    void addZombiePed();
+    bool shouldCreateActor(int chance);
 
     void updateLastBorderY();
     void setStats();
     void resetVars();
     int soulsRequired() const;
     double getRandomRoadX() const;
-
+    double getRandomScreenX() const;
 };
 
 #endif // STUDENTWORLD_H_

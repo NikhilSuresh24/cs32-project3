@@ -2,7 +2,7 @@
 #define ACTOR_H_
 
 #include "GraphObject.h"
-#include <cmath>
+
 
 class StudentWorld;
 
@@ -25,6 +25,7 @@ public:
     bool getCAW() const;
     bool isOffScreen() const;
     bool isOverlapping(const Actor &other);
+    bool isOverlappingGR();
 
     void setHorizSpeed(double speed);
     void setVertSpeed(double speed);
@@ -54,9 +55,9 @@ class Agent : public Actor
 public:
     static const bool IS_CAW = true;
     static const unsigned int DEPTH = 0;
-    static constexpr double START_Y_SPEED = 0;
+    static constexpr double START_X_SPEED = 0;
 
-    Agent(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, double startXSpeed, int imageID, double startX, double startY, int dir, double size, double startHP);
+    Agent(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, double startYSpeed, int imageID, double startX, double startY, int dir, double size, double startHP);
     virtual ~Agent();
 
     int getHP() const;
@@ -84,7 +85,7 @@ public:
     static constexpr double START_X = 128;
     static constexpr double START_Y = 32;
     static constexpr double BORDER_DMG = 10;
-    static constexpr double START_X_SPEED = 0;
+    static constexpr double START_Y_SPEED = 0;
     static constexpr double TURN_ANGLE_INCREMENT = 8;
     static constexpr double LEFT_ANGLE_TURN_LIMIT = 114;
     static constexpr double RIGHT_ANGLE_TURN_LIMIT = 66;
@@ -115,6 +116,7 @@ private:
     int m_sprayCount;
 };
 
+// TODO: Move method should be in actor (since same alg used by pedestrian)
 class StaticActor : public Actor
 {
 public:
@@ -239,4 +241,73 @@ public:
     virtual void incrementStat();
 };
 
+class Pedestrian : public Agent
+{
+public:
+    static const int INIT_HP = 2;
+    static constexpr double START_Y_SPEED = -4;
+    static const int START_DIR = 0;
+    static const bool CAN_COLLIDE_GR = true;
+    static const bool CAN_COLLIDE_WATER = true;
+    static const int INIT_MOVEMENT_PLAN = 0;
+
+    static const int Y_SPEED_UPPER_BOUND = 3;
+    static const int Y_SPEED_LOWER_BOUND = 1;
+    static const int MOVEMENT_PLAN_LOWER_BOUND = 4;
+    static const int MOVEMENT_PLAN_UPPER_BOUND = 32;
+    static const int LEFT_DIR = 180;
+    static const int RIGHT_DIR = 0;
+
+    Pedestrian(StudentWorld *ptr, int imageID, double startX, double startY, double size);
+    virtual ~Pedestrian();
+
+    virtual void doSomething();
+    virtual void move();
+    virtual void onDeath() const; //TODO: Consider getting rid of onDeath
+    virtual void aggroGR() = 0;   // only used by Zombie Ped
+
+private:
+    int m_movementPlan;
+
+    void setMovementPlan();
+};
+
+class HumanPedestrian : public Pedestrian
+{
+public:
+    static constexpr double SIZE = 2.0;
+
+    HumanPedestrian(StudentWorld *ptr, double startX, double startY);
+    virtual ~HumanPedestrian();
+
+    void aggroGR(); // human doesn't aggro GR, so will be empty
+    virtual void onCollideGR();
+    virtual void onCollideWater();
+};
+
+class ZombiePedestrian : public Pedestrian
+{
+public:
+    static constexpr double SIZE = 3.0;
+    static const int INIT_GRUNT_TICKS = 0;
+    static const int RESET_GRUNT_TICKS = 20;
+    static const int SCORE_INCREMENT = 150;
+    static const int DMG_TO_GR = 5;
+    static const int DMG_FROM_GR = 2;
+    static constexpr double GR_DELTA_X = 30.0;
+    static const int ATTACK_GR_DIR = 270;
+    static constexpr double ATTACK_GR_X_SPEED = 1.0;
+
+    ZombiePedestrian(StudentWorld *ptr, double startX, double startY);
+    virtual ~ZombiePedestrian();
+
+    void aggroGR(); 
+    virtual void onCollideGR();
+    virtual void onCollideWater();
+
+private:
+    int m_gruntTicks;
+    void decrementGruntTicks();
+    void resetGruntTicks();
+};
 #endif // ACTOR_H_

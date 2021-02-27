@@ -1,7 +1,7 @@
 #include "Actor.h"
 #include "StudentWorld.h"
 #include <cmath>
-
+#include <iostream>
 using namespace std;
 
 /* 
@@ -70,6 +70,11 @@ bool Actor::isOverlapping(const Actor &other)
     return deltaX < radiusSum * X_SCALE && deltaY < radiusSum * Y_SCALE;
 }
 
+bool Actor::isOverlappingGR()
+{
+    return isOverlapping(*(getWorld()->getGR()));
+}
+
 void Actor::setHorizSpeed(double speed)
 {
     m_horizSpeed = speed;
@@ -83,8 +88,8 @@ void Actor::setIsAlive(bool isAlive)
     m_isAlive = isAlive;
 }
 
-Agent::Agent(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, double startXSpeed, int imageID, double startX, double startY, int dir, double size, double startHP)
-    : Actor(ptr, canCollideGR, canCollideWater, IS_CAW, startXSpeed, START_Y_SPEED, imageID, startX, startY, dir, size, DEPTH), m_hp(startHP), m_initHp(startHP) {}
+Agent::Agent(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, double startYSpeed, int imageID, double startX, double startY, int dir, double size, double startHP)
+    : Actor(ptr, canCollideGR, canCollideWater, IS_CAW, START_X_SPEED, startYSpeed, imageID, startX, startY, dir, size, DEPTH), m_hp(startHP), m_initHp(startHP) {}
 Agent::~Agent() {}
 
 int Agent::getHP() const
@@ -117,7 +122,7 @@ void Agent::takeDamage(int damage)
 }
 
 GhostRacer::GhostRacer(StudentWorld *ptr)
-    : Agent(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, START_X_SPEED, IID_GHOST_RACER, START_X, START_Y, START_DIR, SIZE, INIT_HP), m_sprayCount(INIT_WATER_COUNT) {}
+    : Agent(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, START_Y_SPEED, IID_GHOST_RACER, START_X, START_Y, START_DIR, SIZE, INIT_HP), m_sprayCount(INIT_WATER_COUNT) {}
 
 GhostRacer::~GhostRacer() {}
 
@@ -361,4 +366,148 @@ WaterGoodie::~WaterGoodie() {}
 void WaterGoodie::incrementStat()
 {
     getWorld()->getGR()->addSprays(SPRAY_INCREMENT);
+}
+
+Pedestrian::Pedestrian(StudentWorld *ptr, int imageID, double startX, double startY, double size)
+    : Agent(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, START_Y_SPEED, imageID, startX, startY, START_DIR, size, INIT_HP), m_movementPlan(INIT_MOVEMENT_PLAN) {}
+Pedestrian::~Pedestrian() {}
+
+void Pedestrian::doSomething()
+{
+    if (!isAlive())
+    {
+        return;
+    }
+
+    if (isOverlappingGR())
+    {
+        onCollideGR();
+        return;
+    }
+
+    aggroGR();
+    move();
+    if (isOffScreen())
+    {
+        return;
+    }
+    setMovementPlan();
+}
+
+//TODO: should be moved to actor class
+void Pedestrian::move()
+{
+    // static actor's vert speed depends on ghost racer's vert speed
+    double newVertSpeed = getVertSpeed() - getWorld()->getGR()->getVertSpeed();
+    double newY = getY() + newVertSpeed;
+    double newX = getX() + getHorizSpeed();
+    moveTo(newX, newY);
+}
+void Pedestrian::onDeath() const {}
+void Pedestrian::setMovementPlan()
+{
+    if (m_movementPlan > 0)
+    {
+        --m_movementPlan;
+        return;
+    }
+
+    double newHorizSpeed = (randInt(0, 1) == 0) ? randInt(-Y_SPEED_UPPER_BOUND, -Y_SPEED_LOWER_BOUND) : randInt(Y_SPEED_LOWER_BOUND, Y_SPEED_UPPER_BOUND);
+    setHorizSpeed(newHorizSpeed);
+    m_movementPlan = randInt(MOVEMENT_PLAN_LOWER_BOUND, MOVEMENT_PLAN_UPPER_BOUND);
+
+    if (getHorizSpeed() < 0)
+    {
+        setDirection(LEFT_DIR);
+    }
+    else
+    {
+        setDirection(RIGHT_DIR);
+    }
+}
+
+HumanPedestrian::HumanPedestrian(StudentWorld *ptr, double startX, double startY)
+    : Pedestrian(ptr, IID_HUMAN_PED, startX, startY, SIZE) {}
+HumanPedestrian::~HumanPedestrian() {}
+
+void HumanPedestrian::aggroGR() {} // human doesn't aggro GR, so will be empty
+
+// lets studentworld know human was hit
+void HumanPedestrian::onCollideGR()
+{
+    getWorld()->humanHit();
+}
+void HumanPedestrian::onCollideWater()
+{
+    setHorizSpeed(-1 * getHorizSpeed()); // reverse direction
+    int newDirection = (getDirection() == LEFT_DIR) ? RIGHT_DIR : LEFT_DIR;
+    setDirection(newDirection);
+    getWorld()->playSound(SOUND_PED_HURT);
+}
+
+ZombiePedestrian::ZombiePedestrian(StudentWorld *ptr, double startX, double startY)
+    : Pedestrian(ptr, IID_ZOMBIE_PED, startX, startY, SIZE), m_gruntTicks(INIT_GRUNT_TICKS) {}
+ZombiePedestrian::~ZombiePedestrian() {}
+
+void ZombiePedestrian::aggroGR()
+{
+    GhostRacer *gr = getWorld()->getGR();
+    double deltaX = getX() - gr->getX();
+    if (abs(deltaX) < GR_DELTA_X && getY() > gr->getY())
+    {
+        setDirection(ATTACK_GR_DIR);
+        if (deltaX < 0)
+        {
+            setHorizSpeed(ATTACK_GR_X_SPEED);
+        }
+        else if (deltaX > 0)
+        {
+            setHorizSpeed(-ATTACK_GR_X_SPEED);
+        }
+        else
+        {
+            setHorizSpeed(0);
+        }
+        decrementGruntTicks();
+        if (m_gruntTicks <= 0)
+        {
+            getWorld()->playSound(SOUND_ZOMBIE_ATTACK);
+            resetGruntTicks();
+        }
+    }
+}
+void ZombiePedestrian::onCollideGR()
+{
+    getWorld()->getGR()->takeDamage(DMG_TO_GR);
+    takeDamage(DMG_FROM_GR);
+    getWorld()->playSound(SOUND_PED_DIE);
+    getWorld()->increaseScore(SCORE_INCREMENT);
+}
+void ZombiePedestrian::onCollideWater()
+{
+    takeDamage(1); //TODO: this will be a var in the water proj class
+    if (getHP() <= 0)
+    {
+        // status set to dead by take damage method
+        getWorld()->playSound(SOUND_PED_DIE);
+        if (!isOverlappingGR() && randInt(1, 5) == 1)
+        {
+            HealGoodie *healGoodie = new HealGoodie(getWorld(), getX(), getY());
+            getWorld()->addActor(healGoodie); //TODO: not sure if this works or not
+            getWorld()->increaseScore(SCORE_INCREMENT);
+        }
+    }
+    else
+    {
+        getWorld()->playSound(SOUND_PED_HURT);
+    }
+}
+
+void ZombiePedestrian::decrementGruntTicks()
+{
+    --m_gruntTicks;
+}
+void ZombiePedestrian::resetGruntTicks()
+{
+    m_gruntTicks = RESET_GRUNT_TICKS;
 }

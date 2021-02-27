@@ -60,6 +60,14 @@ int StudentWorld::move()
         {
             (*it)->doSomething();
 
+            // check for hitting pedestrian
+            if (m_isHumanHit)
+            {
+                decLives();
+                resetHumanHit();
+                return GWSTATUS_PLAYER_DIED;
+            }
+
             // quit if GR died
             if (!m_gr->isAlive())
             {
@@ -169,6 +177,8 @@ void StudentWorld::addActors()
     addOilSlick();
     addSoul();
     addWaterGoodie();
+    addHuman();
+    addZombiePed();
 }
 
 /* Add set of borders if enough space */
@@ -235,7 +245,7 @@ void StudentWorld::addOilSlick()
 {
     // add oil slick based on chance at random X pos on road
     int chanceOilSlick = max(150 - getLevel() * 10, 40);
-    if (shouldCreateStaticActor(chanceOilSlick))
+    if (shouldCreateActor(chanceOilSlick))
     {
         OilSlick *oil = new OilSlick(this, getRandomRoadX(), VIEW_HEIGHT);
         m_objects.push_back(oil);
@@ -249,7 +259,7 @@ void StudentWorld::soulSaved()
 
 void StudentWorld::addSoul()
 {
-    if (shouldCreateStaticActor(100))
+    if (shouldCreateActor(100))
     {
         Soul *soul = new Soul(this, getRandomRoadX(), VIEW_HEIGHT);
         m_objects.push_back(soul);
@@ -261,7 +271,7 @@ double StudentWorld::getRandomRoadX() const
     return randInt(LEFT_EDGE, RIGHT_EDGE);
 }
 
-bool StudentWorld::shouldCreateStaticActor(int chance)
+bool StudentWorld::shouldCreateActor(int chance)
 {
     int upperBound = chance - 1;
     return randInt(0, upperBound) == 0;
@@ -270,9 +280,54 @@ bool StudentWorld::shouldCreateStaticActor(int chance)
 void StudentWorld::addWaterGoodie()
 {
     int chanceHolyWater = 100 + 10 * getLevel();
-    if (shouldCreateStaticActor(chanceHolyWater))
+    if (shouldCreateActor(chanceHolyWater))
     {
         WaterGoodie *waterGoodie = new WaterGoodie(this, getRandomRoadX(), VIEW_HEIGHT);
         m_objects.push_back(waterGoodie);
+    }
+}
+
+void StudentWorld::endLevel()
+{
+    decLives();
+}
+
+void StudentWorld::humanHit()
+{
+    m_isHumanHit = true;
+}
+
+void StudentWorld::resetHumanHit()
+{
+    m_isHumanHit = false;
+}
+
+void StudentWorld::addHuman()
+{
+    int chanceHuman = max(200 - getLevel() * 10, 30);
+    if (shouldCreateActor(chanceHuman))
+    {
+        HumanPedestrian *human = new HumanPedestrian(this, getRandomScreenX(), VIEW_HEIGHT);
+        m_objects.push_back(human);
+    }
+}
+
+double StudentWorld::getRandomScreenX() const
+{
+    return randInt(0, VIEW_WIDTH);
+}
+
+void StudentWorld::addActor(Actor *actor)
+{
+    m_objects.push_back(actor);
+}
+
+void StudentWorld::addZombiePed()
+{
+    int chanceZombie = max(100 - getLevel() * 10, 20);
+    if (shouldCreateActor(chanceZombie))
+    {
+        ZombiePedestrian *zombie = new ZombiePedestrian(this, getRandomScreenX(), VIEW_HEIGHT);
+        m_objects.push_back(zombie);
     }
 }
