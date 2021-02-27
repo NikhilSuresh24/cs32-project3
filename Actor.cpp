@@ -211,6 +211,19 @@ void GhostRacer::doSomething()
     move();
 }
 
+void GhostRacer::makeSpray()
+{
+    if (m_sprayCount >= 1)
+    {
+        double sprayX = getX() + SPRITE_HEIGHT * cos(DEG_2_RAD * getDirection());
+        double sprayY = getY() + SPRITE_HEIGHT * sin(DEG_2_RAD * getDirection());
+        HolyWater *projectile = new HolyWater(getWorld(), IID_HOLY_WATER_PROJECTILE, sprayX, sprayY, getDirection());
+        getWorld()->addActor(projectile);
+        getWorld()->playSound(SOUND_PLAYER_SPRAY);
+        decrementSprayCount();
+    }
+}
+
 /* Apply user input to Ghost Racer movement */
 void GhostRacer::applyUserInput()
 {
@@ -246,6 +259,9 @@ void GhostRacer::applyUserInput()
             {
                 setVertSpeed(getVertSpeed() - SPEED_INCREMENT);
             }
+            break;
+        case KEY_PRESS_SPACE:
+            makeSpray();
             break;
         }
     }
@@ -380,6 +396,7 @@ void Pedestrian::doSomething()
     move();
     if (isOffScreen())
     {
+        setIsAlive(false);
         return;
     }
     setMovementPlan();
@@ -466,7 +483,7 @@ void ZombiePedestrian::onCollideGR()
 }
 void ZombiePedestrian::onCollideWater()
 {
-    takeDamage(1); //TODO: this will be a var in the water proj class
+    takeDamage(HolyWater::DAMAGE);
     if (getHP() <= 0)
     {
         // status set to dead by take damage method
@@ -475,8 +492,8 @@ void ZombiePedestrian::onCollideWater()
         {
             HealGoodie *healGoodie = new HealGoodie(getWorld(), getX(), getY());
             getWorld()->addActor(healGoodie); //TODO: not sure if this works or not
-            getWorld()->increaseScore(SCORE_INCREMENT);
         }
+        getWorld()->increaseScore(SCORE_INCREMENT);
     }
     else
     {
@@ -491,4 +508,46 @@ void ZombiePedestrian::decrementGruntTicks()
 void ZombiePedestrian::resetGruntTicks()
 {
     m_gruntTicks = RESET_GRUNT_TICKS;
+}
+
+HolyWater::HolyWater(StudentWorld *ptr, int imageID, double startX, double startY, int dir)
+    : Actor(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, IS_CAW, START_X_SPEED, START_Y_SPEED, IID_HOLY_WATER_PROJECTILE, startX, startY, dir, SIZE, DEPTH), m_travel(0) {}
+HolyWater::~HolyWater() {}
+
+void HolyWater::onCollideGR() {}
+void HolyWater::onCollideWater() {}
+
+void HolyWater::doSomething()
+{
+    if (!isAlive())
+    {
+        return;
+    }
+
+    if (getWorld()->checkProjectileHit(this))
+    {
+        setIsAlive(false);
+        return;
+    }
+
+    move();
+    if (isOffScreen())
+    {
+        setIsAlive(false);
+        return;
+    }
+
+    if (m_travel >= MAX_TRAVEL_DIST)
+    {
+        setIsAlive(false);
+    }
+}
+void HolyWater::move()
+{
+    moveForward(SPRITE_HEIGHT); //TODO: check double/int on speeds and positions
+    updateTravel();
+}
+void HolyWater::updateTravel()
+{
+    m_travel += SPRITE_HEIGHT;
 }

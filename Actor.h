@@ -3,7 +3,6 @@
 
 #include "GraphObject.h"
 
-
 class StudentWorld;
 
 class Actor : public GraphObject
@@ -101,7 +100,6 @@ public:
 
     int getSprayCount() const;
     void addSprays(int numSprays);
-    void decrementSprayCount();
     void onOil();
     void applyUserInput();
 
@@ -112,8 +110,9 @@ public:
 
 private:
     int m_sprayCount;
+    void makeSpray();
+    void decrementSprayCount();
 };
-
 
 class StaticActor : public Actor
 {
@@ -254,7 +253,7 @@ public:
     virtual ~Pedestrian();
 
     virtual void doSomething();
-    virtual void aggroGR() = 0;   // only used by Zombie Ped
+    virtual void aggroGR() = 0; // only used by Zombie Ped
 
 private:
     int m_movementPlan;
@@ -291,7 +290,7 @@ public:
     ZombiePedestrian(StudentWorld *ptr, double startX, double startY);
     virtual ~ZombiePedestrian();
 
-    void aggroGR(); 
+    void aggroGR();
     virtual void onCollideGR();
     virtual void onCollideWater();
 
@@ -299,5 +298,32 @@ private:
     int m_gruntTicks;
     void decrementGruntTicks();
     void resetGruntTicks();
+};
+
+class HolyWater : public Actor
+{
+public:
+    static const bool CAN_COLLIDE_GR = false;
+    static const bool CAN_COLLIDE_WATER = false;
+    static const bool IS_CAW = false;
+    static constexpr double START_X_SPEED = 0.0; // unused by class
+    static constexpr double START_Y_SPEED = 0.0; // unused by class
+    static const unsigned int DEPTH = 1;
+    static const int DAMAGE = 1;
+    static constexpr double MAX_TRAVEL_DIST = 160.0;
+    static constexpr double SIZE = 1.0;
+
+    HolyWater(StudentWorld *ptr, int imageID, double startX, double startY, int dir);
+    virtual ~HolyWater();
+
+    virtual void onCollideGR();
+    virtual void onCollideWater();
+    virtual void doSomething();
+    virtual void move();
+
+private:
+    double m_travel;
+
+    void updateTravel();
 };
 #endif // ACTOR_H_

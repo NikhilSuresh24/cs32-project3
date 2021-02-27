@@ -35,6 +35,7 @@ public:
     void humanHit();
     void resetHumanHit();
     void addActor(Actor *actor);
+    bool checkProjectileHit(HolyWater *projectile);
 
 private:
     GhostRacer *m_gr;

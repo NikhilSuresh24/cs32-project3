@@ -316,7 +316,7 @@ double StudentWorld::getRandomScreenX() const
     return randInt(0, VIEW_WIDTH);
 }
 
-void StudentWorld::addActor(Actor *actor)
+void StudentWorld::addActor(Actor *actor) //TODO: can this be a const actor?
 {
     m_objects.push_back(actor);
 }
@@ -329,4 +329,18 @@ void StudentWorld::addZombiePed()
         ZombiePedestrian *zombie = new ZombiePedestrian(this, getRandomScreenX(), VIEW_HEIGHT);
         m_objects.push_back(zombie);
     }
+}
+
+bool StudentWorld::checkProjectileHit(HolyWater *projectile)
+{
+    for (auto it = m_objects.begin(); it != m_objects.end(); ++it)
+    {
+        if ((*it)->canCollideWater() && (*it)->isOverlapping(*projectile))
+        {
+            (*it)->onCollideWater();
+            return true;
+        }
+    }
+
+    return false;
 }
