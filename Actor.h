@@ -29,6 +29,7 @@ public:
     void setVertSpeed(double speed);
     void setIsAlive(bool isAlive);
 
+    // every actor must know how it interacts with GR, Water, and how it moves and does something
     virtual void onCollideGR() = 0;
     virtual void onCollideWater() = 0;
     virtual void doSomething() = 0;
@@ -41,9 +42,6 @@ private:
     double m_horizSpeed;
     double m_vertSpeed;
     bool m_isAlive;
-    bool m_hasHp;
-    int m_initHp;
-    int m_hp;
     bool m_CAW;
 };
 
@@ -65,6 +63,7 @@ public:
     Agent(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, double startYSpeed, int imageID, double startX, double startY, int dir, double size, double startHP);
     virtual ~Agent();
 
+    // agents have HP and most have movementPlans
     int getHP() const;
     void healHP(int heal);
     void takeDamage(int damage);
@@ -109,10 +108,10 @@ public:
     GhostRacer(StudentWorld *ptr);
     virtual ~GhostRacer();
 
+    // GR has spray and interacts with oil
     int getSprayCount() const;
     void addSprays(int numSprays);
     void onOil();
-    void applyUserInput();
 
     virtual void onCollideGR();
     virtual void onCollideWater();
@@ -123,6 +122,8 @@ private:
     int m_sprayCount;
     void makeSpray();
     void decrementSprayCount();
+    void applyUserInput();
+
 };
 
 class StaticActor : public Actor
@@ -179,6 +180,7 @@ public:
     virtual ~Goodie();
 
     virtual void onCollideGR();
+    // every goodie increments a stat on collision with GR
     virtual void incrementStat() = 0;
 
 private:
@@ -212,7 +214,7 @@ public:
     DamageableGoodie(StudentWorld *ptr, int imageID, double startX, double startY, int dir, double size, int scoreIncrement);
     virtual ~DamageableGoodie();
 
-    virtual void onCollideWater();
+    virtual void onCollideWater(); // damageable goodies die to water
 };
 
 class HealGoodie : public DamageableGoodie

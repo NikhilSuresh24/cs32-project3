@@ -25,6 +25,7 @@ Actor::Actor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, bool is
 }
 Actor::~Actor() {}
 
+// self explanatory methods not commented
 bool Actor::canCollideGR() const
 {
     return m_canCollideGR;
@@ -54,6 +55,7 @@ bool Actor::isCAW() const
     return m_CAW;
 }
 
+/*Returns true if Actor is offscreen*/
 bool Actor::isOffScreen() const
 {
     return (getX() < 0 || getX() > VIEW_WIDTH) || (getY() < 0 || getY() > VIEW_HEIGHT);
@@ -70,6 +72,7 @@ bool Actor::isOverlapping(const Actor *other) const
     return deltaX < radiusSum * X_SCALE && deltaY < radiusSum * Y_SCALE;
 }
 
+/* Returns true if actor overlaps with GR */
 bool Actor::isOverlappingGR() const
 {
     return isOverlapping(getWorld()->getGR());
@@ -88,6 +91,7 @@ void Actor::setIsAlive(bool isAlive)
     m_isAlive = isAlive;
 }
 
+/* Base movement algorithm that updates position based on speeds */
 void Actor::move()
 {
     // actor's vert speed depends on ghost racer's vert speed
@@ -105,6 +109,8 @@ int Agent::getHP() const
 {
     return m_hp;
 }
+
+/* Heal up to init hp by @param heal */
 void Agent::healHP(int heal)
 {
     // only heal if amt > 0
@@ -115,6 +121,8 @@ void Agent::healHP(int heal)
         m_hp = (newHp > m_initHp) ? m_initHp : newHp;
     }
 }
+
+/* Take damage and if out of HP, set agent to dead */
 void Agent::takeDamage(int damage)
 {
     // deal damage
@@ -130,6 +138,7 @@ void Agent::takeDamage(int damage)
     }
 }
 
+/* Base movement plan used by Pedestrians */
 void Agent::newMovementPlan()
 {
     --m_movementPlan;
@@ -242,10 +251,13 @@ void GhostRacer::doSomething()
     move();
 }
 
+/* Make Holy Water spray in front of Ghost Racer */
 void GhostRacer::makeSpray()
 {
+
     if (m_sprayCount >= 1)
     {
+        // determine starting pos of spray
         double sprayX = getX() + SPRITE_HEIGHT * cos(DEG_2_RAD * getDirection());
         double sprayY = getY() + SPRITE_HEIGHT * sin(DEG_2_RAD * getDirection());
         HolyWater *projectile = new HolyWater(getWorld(), IID_HOLY_WATER_PROJECTILE, sprayX, sprayY, getDirection());
@@ -300,6 +312,7 @@ void GhostRacer::applyUserInput()
 /* Move Ghost Racer based on direction */
 void GhostRacer::move()
 {
+    // determine change in X pos
     double deltaX = cos(DEG_2_RAD * getDirection()) * MAX_SHIFT_PER_TICK;
     moveTo(getX() + deltaX, getY());
 }
@@ -343,6 +356,7 @@ OilSlick::~OilSlick() {}
 /* Oil Slick action on collision with Ghost Racer*/
 void OilSlick::onCollideGR()
 {
+    // play sound and make GR spin out
     getWorld()->playSound(SOUND_OIL_SLICK);
     getWorld()->getGR()->onOil();
 }
@@ -356,6 +370,7 @@ Goodie::~Goodie() {}
 
 void Goodie::onCollideGR()
 {
+    // kill goodie, increment stats and scores
     incrementStat();
     setIsAlive(false);
     getWorld()->playSound(m_collectSound);
@@ -416,19 +431,24 @@ void Pedestrian::doSomething()
         return;
     }
 
+    // deal with GR collision
     if (isOverlappingGR())
     {
         onCollideGR();
         return;
     }
 
+    // deal with movement and aggroing GR
     aggroGR();
     move();
+
+    // kill ped if offscreen
     if (isOffScreen())
     {
         setIsAlive(false);
         return;
     }
+
     newMovementPlan();
 }
 
@@ -445,6 +465,7 @@ void HumanPedestrian::onCollideGR()
 }
 void HumanPedestrian::onCollideWater()
 {
+    // reverse pedestrian speed and dir when hit by water
     setHorizSpeed(-1 * getHorizSpeed()); // reverse direction
     int newDirection = (getDirection() == LEFT_DIR) ? RIGHT_DIR : LEFT_DIR;
     setDirection(newDirection);
@@ -459,9 +480,13 @@ void ZombiePedestrian::aggroGR()
 {
     GhostRacer *gr = getWorld()->getGR();
     double deltaX = getX() - gr->getX();
+
+    // aggro GR if in 30 pixel X pos range
     if (abs(deltaX) < GR_DELTA_X && getY() > gr->getY())
     {
         setDirection(ATTACK_GR_DIR);
+
+        // determine speed based on sign of deltaX
         if (deltaX < 0)
         {
             setHorizSpeed(ATTACK_GR_X_SPEED);
@@ -474,6 +499,8 @@ void ZombiePedestrian::aggroGR()
         {
             setHorizSpeed(0);
         }
+
+        // determine whether zombie will grunt
         decrementGruntTicks();
         if (m_gruntTicks <= 0)
         {
@@ -484,8 +511,9 @@ void ZombiePedestrian::aggroGR()
 }
 void ZombiePedestrian::onCollideGR()
 {
+    // take damage, give GR damage, increase score
     getWorld()->getGR()->takeDamage(DMG_TO_GR);
-    takeDamage(DMG_FROM_GR);
+    takeDamage(DMG_FROM_GR); // take damage deals with setting alive status of zombie
     getWorld()->playSound(SOUND_PED_DIE);
     getWorld()->increaseScore(SCORE_INCREMENT);
 }
@@ -494,8 +522,9 @@ void ZombiePedestrian::onCollideWater()
     takeDamage(HolyWater::DAMAGE);
     if (getHP() <= 0)
     {
-        // status set to dead by take damage method
         getWorld()->playSound(SOUND_PED_DIE);
+
+        // if didn't die to GR, 1/5 chance spawn healgoodie
         if (!isOverlappingGR() && randInt(1, 5) == 1)
         {
             HealGoodie *healGoodie = new HealGoodie(getWorld(), getX(), getY());
@@ -505,6 +534,7 @@ void ZombiePedestrian::onCollideWater()
     }
     else
     {
+        // not dead, so play hurt sounds
         getWorld()->playSound(SOUND_PED_HURT);
     }
 }
@@ -532,6 +562,8 @@ void HolyWater::doSomething()
         return;
     }
 
+    // if projectile hits hittable actor, kill the projectile
+    // studentworld takes care of dealing damage to other actor
     if (getWorld()->checkProjectileHit(this))
     {
         setIsAlive(false);
@@ -545,6 +577,7 @@ void HolyWater::doSomething()
         return;
     }
 
+    // kill projectile if traveled too much
     if (m_travel >= MAX_TRAVEL_DIST)
     {
         setIsAlive(false);
@@ -578,19 +611,20 @@ void ZombieCab::onCollideGR()
     // calculate new speed and direction
     double deltaX = getX() - getWorld()->getGR()->getX();
 
-    // if cab to right
+    // if cab to right of GR, send cab to far right
     if (deltaX > 0)
     {
         setHorizSpeed(POST_COLLISION_X_SPEED);
         setDirection(POST_COLLISION_RIGHT_DIR - getRandomDirectionShift());
     }
-    // cab to left or same X
+    // cab to left or same X of GR, send cab to far left
     else
     {
         setHorizSpeed(-POST_COLLISION_X_SPEED);
         setDirection(POST_COLLISION_LEFT_DIR + getRandomDirectionShift());
     }
 
+    // save this interaction so cab cannot interact with GR again
     m_hasDamagedGR = true;
 }
 void ZombieCab::onCollideWater()
@@ -624,6 +658,7 @@ void ZombieCab::doSomething()
         return;
     }
 
+    // handle GR interaction
     if (isOverlappingGR())
     {
         onCollideGR();
@@ -642,6 +677,7 @@ void ZombieCab::doSomething()
         return;
     };
 
+    // keep track of movement plan
     newMovementPlan();
 }
 
@@ -650,6 +686,7 @@ double ZombieCab::getRandomDirectionShift() const
     return randInt(0, RAND_DIRECTION_RANGE - 1);
 }
 
+/* Adjust speed based on nearby CAW actors. Return true if speed change made, false otherwise */
 bool ZombieCab::vertSpeedAdjustment()
 {
     double deltaYSpeed = getVertSpeed() - getWorld()->getGR()->getVertSpeed();
@@ -658,20 +695,24 @@ bool ZombieCab::vertSpeedAdjustment()
     {
         return false;
     }
+    // slow down if going faster than GR and closest CAW actor too close
     if (deltaYSpeed > 0 && getWorld()->directionalDistanceClosetCAWActor(this, true) < SAFE_DIST)
     {
         setVertSpeed(getVertSpeed() - Y_SPEED_INCREMENT);
         return true;
     }
+    // speed up if going slower or same speed as GR and closest CAW actor too close
     else if (deltaYSpeed <= 0 && getWorld()->directionalDistanceClosetCAWActor(this, false) < SAFE_DIST)
     {
         setVertSpeed(getVertSpeed() + Y_SPEED_INCREMENT);
         return true;
     }
 
+    // return false since no speed change made
     return false;
 }
 
+/* Determine which lane zombiecab is in */
 int ZombieCab::getLane() const
 {
     // left Lane
@@ -696,10 +737,11 @@ int ZombieCab::getLane() const
         return -1;
     }
 }
-
+/* Update cab's movement plan and create new one if necessary*/
 void ZombieCab::newMovementPlan()
 {
     setMovementPlan(getMovementPlan() - 1);
+    // only create new movement plan if existing movement plan expired
     if (getMovementPlan() > 0)
     {
         return;
@@ -709,6 +751,7 @@ void ZombieCab::newMovementPlan()
     setVertSpeed(getVertSpeed() + getRandomSpeedModifier());
 }
 
+/* Random speed modifier on movement plan */
 double ZombieCab::getRandomSpeedModifier() const
 {
     return randInt(-MOVEMENT_PLAN_SPEED_MODIFER, MOVEMENT_PLAN_SPEED_MODIFER);

@@ -20,6 +20,7 @@ StudentWorld::StudentWorld(string assetPath)
 {
 }
 
+/* Cleanup StudentWorld */
 StudentWorld::~StudentWorld()
 {
     cleanUp();
@@ -172,6 +173,7 @@ void StudentWorld::updateLastBorderY()
     }
 }
 
+/* Add all sorts of actors every tick */
 void StudentWorld::addActors()
 {
     addBorders();
@@ -253,12 +255,13 @@ void StudentWorld::addOilSlick()
         m_objects.push_back(oil);
     }
 }
-
+/* increment souls saved count*/
 void StudentWorld::soulSaved()
 {
     m_soulsSaved++;
 }
 
+/* Add soul to world */
 void StudentWorld::addSoul()
 {
     if (shouldCreateActor(100))
@@ -268,14 +271,16 @@ void StudentWorld::addSoul()
     }
 }
 
+/* Get random X coord on road */
 double StudentWorld::getRandomRoadX() const
 {
     return randInt(ROAD_LEFT_EDGE, ROAD_RIGHT_EDGE);
 }
 
+/* Determine if a actor should be made based on a certain chance */
 bool StudentWorld::shouldCreateActor(int chance) const
 {
-    int upperBound = chance - 1;
+    int upperBound = chance - 1; // randInt is inclusive, so -1 from chance
     return randInt(0, upperBound) == 0;
 }
 
@@ -289,6 +294,7 @@ void StudentWorld::addWaterGoodie()
     }
 }
 
+/* Let StudentWorld know human has been hit */
 void StudentWorld::humanHit()
 {
     m_isHumanHit = true;
@@ -309,12 +315,14 @@ void StudentWorld::addHuman()
     }
 }
 
+/* Get random X coord on screen */
 double StudentWorld::getRandomScreenX() const
 {
     return randInt(0, VIEW_WIDTH);
 }
 
-void StudentWorld::addActor(Actor *actor) //TODO: can this be a const actor?
+/* Add actor to world */
+void StudentWorld::addActor(Actor *actor)
 {
     m_objects.push_back(actor);
 }
@@ -329,20 +337,24 @@ void StudentWorld::addZombiePed()
     }
 }
 
+/* Check all actors for holy water collisions*/
 bool StudentWorld::checkProjectileHit(HolyWater *projectile)
 {
     for (auto it = m_objects.begin(); it != m_objects.end(); ++it)
     {
+        // only collide with holy water if actor can and is overlapping w/ holy water
         if ((*it)->canCollideWater() && (*it)->isOverlapping(projectile))
         {
             (*it)->onCollideWater();
+            // let holy water know it hit something
             return true;
         }
     }
-
+    // let holy water know it didn't hit something
     return false;
 }
 
+/* Add zombie cab depending if there's space on screen */
 void StudentWorld::addZombieCab()
 {
     int chanceCab = max(100 - getLevel() * 10, 20);
@@ -350,6 +362,7 @@ void StudentWorld::addZombieCab()
     {
         set<int> checkedLanes;
         bool foundLane = false;
+        // get random lane to check
         int curLane = randInt(1, NUM_LANES);
         double startX;
         double startY;
@@ -358,30 +371,22 @@ void StudentWorld::addZombieCab()
         // look for new lane to insert if we haven't found a lane and haven't checked all lanes
         while (!foundLane && checkedLanes.size() != NUM_LANES)
         {
-            // cout << "LANE: " << curLane << endl;
-            // cout << "CHECKED LANES: " << checkedLanes.size() << endl;
             checkedLanes.insert(curLane);
             switch (curLane)
             {
             case 1:
-                // check lane 1 top and bottom
-                // cout << "CASE 1 " << endl;
-
+                // check lane 1 top of screen for space
                 if (distanceClosestCAWActor(ROAD_LEFT_EDGE, LEFT_DIVIDER_X, 0) > VIEW_HEIGHT / 3)
                 {
-                    // cout << "CASE 1 BOT CHECK" << endl;
-
                     foundLane = true;
                     startX = LEFT_LANE_CENTER;
                     startY = SPRITE_HEIGHT / 2;
                     ySpeed = getGR()->getVertSpeed() + getCabSpeedModifier();
                     break;
                 }
-
+                // check lane 1 bottom of screen for space
                 if (distanceClosestCAWActor(ROAD_LEFT_EDGE, LEFT_DIVIDER_X, VIEW_HEIGHT) > VIEW_HEIGHT / 3)
                 {
-                    // cout << "CASE 1 TOP CHECK" << endl;
-
                     foundLane = true;
                     startX = LEFT_LANE_CENTER;
                     startY = VIEW_HEIGHT - SPRITE_HEIGHT / 2;
@@ -389,23 +394,18 @@ void StudentWorld::addZombieCab()
                     break;
                 }
             case 2:
-                // cout << "CASE 2 " << endl;
-
-                // check lane 2 top and bottom
+                // check lane 2 top of screen for space
                 if (distanceClosestCAWActor(LEFT_DIVIDER_X, RIGHT_DIVIDER_X, 0) > VIEW_HEIGHT / 3)
                 {
-                    // cout << "CASE 2 BOT CHECK" << endl;
-
                     foundLane = true;
                     startX = ROAD_CENTER;
                     startY = SPRITE_HEIGHT / 2;
                     ySpeed = getGR()->getVertSpeed() + getCabSpeedModifier();
                     break;
                 }
-
+                // check lane 2 bottom of screen for space
                 if (distanceClosestCAWActor(LEFT_DIVIDER_X, RIGHT_DIVIDER_X, VIEW_HEIGHT) > VIEW_HEIGHT / 3)
                 {
-                    // cout << "CASE 2 TOP CHECK" << endl;
                     foundLane = true;
                     startX = ROAD_CENTER;
                     startY = VIEW_HEIGHT - SPRITE_HEIGHT / 2;
@@ -413,23 +413,18 @@ void StudentWorld::addZombieCab()
                     break;
                 }
             case 3:
-                // check lane 3 top and bottom
-                // cout << "CASE 3 " << endl;
-
+                // check lane 3 top of screen for space
                 if (distanceClosestCAWActor(RIGHT_DIVIDER_X, ROAD_RIGHT_EDGE, 0) > VIEW_HEIGHT / 3)
                 {
-                    // cout << "CASE 3 BOT CHECK" << endl;
                     foundLane = true;
                     startX = RIGHT_LANE_CENTER;
                     startY = SPRITE_HEIGHT / 2;
                     ySpeed = getGR()->getVertSpeed() + getCabSpeedModifier();
                     break;
                 }
-
+                // check lane 3 bottom of screen for space
                 if (distanceClosestCAWActor(RIGHT_DIVIDER_X, ROAD_RIGHT_EDGE, VIEW_HEIGHT) > VIEW_HEIGHT / 3)
                 {
-                    // cout << "CASE 3 TOP CHECK" << endl;
-
                     foundLane = true;
                     startX = RIGHT_LANE_CENTER;
                     startY = VIEW_HEIGHT - SPRITE_HEIGHT / 2;
@@ -438,20 +433,19 @@ void StudentWorld::addZombieCab()
                 }
             }
 
-            // find next lane to check
-            // of all lanes, checked, curLane not changed, but while loop above ends
+            // find next lane to check, since current lane not suitable
+            // if all lanes, checked, curLane not changed, but while loop above ends
             for (int i = 1; i <= NUM_LANES; ++i)
             {
                 if (checkedLanes.find(i) == checkedLanes.end())
                 {
                     curLane = i;
-                    // cout << "NEW LANE: " << i << endl;
                     break;
                 }
             }
         }
 
-        // add cab
+        // add cab if good lane found
         if (foundLane)
         {
             ZombieCab *cab = new ZombieCab(this, ySpeed, startX, startY);
@@ -460,13 +454,14 @@ void StudentWorld::addZombieCab()
     }
 }
 
+/* Finds shortest absolute distance */
 double StudentWorld::distanceClosestCAWActor(double xMin, double xMax, double y) const
 {
     // minDist initialized to max height in case no actors found in lane
     double minDist = VIEW_HEIGHT;
     for (auto it = m_objects.begin(); it != m_objects.end(); ++it)
     {
-        // if CAW actor and in lane
+        // if CAW actor and in lane, find absolute distance from y pos
         if ((*it)->isCAW() && (*it)->getX() >= xMin && (*it)->getX() < xMax)
         {
             double dist = abs((*it)->getY() - y);
@@ -477,7 +472,7 @@ double StudentWorld::distanceClosestCAWActor(double xMin, double xMax, double y)
         }
     }
 
-    // check ghost racer
+    // check ghost racer distance (its not in the actors vec)
     if (getGR()->getX() >= xMin && getGR()->getX() < xMax)
     {
         double dist = abs(getGR()->getY() - y);
@@ -486,30 +481,29 @@ double StudentWorld::distanceClosestCAWActor(double xMin, double xMax, double y)
             minDist = dist;
         }
     }
+    // return the smallest distance from Y pos
     return minDist;
 }
 
+/* Determine closest CAW actor in front or behind cab */
 double StudentWorld::directionalDistanceClosetCAWActor(const ZombieCab *cab, bool inFront) const
 {
     double xMin;
     double xMax;
     int lane = cab->getLane();
 
-    // get X bounds
+    // get X bounds based on lane
     switch (lane)
     {
     case 1:
-        // cout << "CASE 1" << endl;
         xMin = ROAD_LEFT_EDGE;
         xMax = LEFT_DIVIDER_X;
         break;
     case 2:
-        // cout << "CASE 2" << endl;
         xMin = LEFT_DIVIDER_X;
         xMax = RIGHT_DIVIDER_X;
         break;
     case 3:
-        // cout << "CASE 3" << endl;
         xMin = RIGHT_DIVIDER_X;
         xMax = ROAD_RIGHT_EDGE;
         break;
@@ -523,10 +517,11 @@ double StudentWorld::directionalDistanceClosetCAWActor(const ZombieCab *cab, boo
         {
             continue;
         }
-
+        // only check CAW actors within x bounds
         if ((*it)->isCAW() && (*it)->getX() >= xMin && (*it)->getX() < xMax)
         {
             double dist = (*it)->getY() - cab->getY();
+            // only consider actors in proper direction from cab
             if ((inFront && dist < 0) || (!inFront && dist > 0))
             {
                 continue;
@@ -539,6 +534,7 @@ double StudentWorld::directionalDistanceClosetCAWActor(const ZombieCab *cab, boo
         }
     }
 
+    // check GR for distance to cab
     if (getGR()->getX() >= xMin && getGR()->getX() < xMax)
     {
         double dist = getGR()->getY() - cab->getY();
@@ -553,9 +549,12 @@ double StudentWorld::directionalDistanceClosetCAWActor(const ZombieCab *cab, boo
             minDist = dist;
         }
     }
+
+    // return shortest distance to CAW actor either in front or behind actor (inFront boolean)
     return minDist;
 }
 
+/* Add variation to cab speed on initialization */
 double StudentWorld::getCabSpeedModifier() const
 {
     return randInt(2, 4);

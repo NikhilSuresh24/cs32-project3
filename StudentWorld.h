@@ -37,7 +37,7 @@ public:
     void soulSaved();
     void humanHit();
     void addActor(Actor *actor);
-    bool checkProjectileHit(HolyWater *projectile); // TODO: could be const
+    bool checkProjectileHit(HolyWater *projectile);
     double distanceClosestCAWActor(double xMin, double xMax, double y) const;
     double directionalDistanceClosetCAWActor(const ZombieCab *cab, bool inFront) const;
 
@@ -71,7 +71,6 @@ private:
     double getRandomRoadX() const;
     double getRandomScreenX() const;
     void resetHumanHit();
-
 };
 
 #endif // STUDENTWORLD_H_
