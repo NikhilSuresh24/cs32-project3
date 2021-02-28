@@ -49,7 +49,7 @@ bool Actor::isAlive() const
 {
     return m_isAlive;
 }
-bool Actor::getCAW() const
+bool Actor::isCAW() const
 {
     return m_CAW;
 }
@@ -60,19 +60,19 @@ bool Actor::isOffScreen() const
 }
 
 /* Returns true if other overlaps with this */
-bool Actor::isOverlapping(const Actor &other)
+bool Actor::isOverlapping(const Actor *other) const
 {
     // compare position difference with sizes of objects to determine overlap
-    double deltaX = (other.getX() - getX() > 0) ? other.getX() - getX() : getX() - other.getX();
-    double deltaY = (other.getY() - getY() > 0) ? other.getY() - getY() : getY() - other.getY();
-    double radiusSum = other.getRadius() + getRadius();
+    double deltaX = abs(other->getX() - getX());
+    double deltaY = abs(other->getY() - getY());
+    double radiusSum = other->getRadius() + getRadius();
 
     return deltaX < radiusSum * X_SCALE && deltaY < radiusSum * Y_SCALE;
 }
 
-bool Actor::isOverlappingGR()
+bool Actor::isOverlappingGR() const
 {
-    return isOverlapping(*(getWorld()->getGR()));
+    return isOverlapping(getWorld()->getGR());
 }
 
 void Actor::setHorizSpeed(double speed)
@@ -98,7 +98,7 @@ void Actor::move()
 }
 
 Agent::Agent(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, double startYSpeed, int imageID, double startX, double startY, int dir, double size, double startHP)
-    : Actor(ptr, canCollideGR, canCollideWater, IS_CAW, START_X_SPEED, startYSpeed, imageID, startX, startY, dir, size, DEPTH), m_hp(startHP), m_initHp(startHP) {}
+    : Actor(ptr, canCollideGR, canCollideWater, IS_CAW, START_X_SPEED, startYSpeed, imageID, startX, startY, dir, size, DEPTH), m_hp(startHP), m_initHp(startHP), m_movementPlan(INIT_MOVEMENT_PLAN) {}
 Agent::~Agent() {}
 
 int Agent::getHP() const
@@ -128,6 +128,37 @@ void Agent::takeDamage(int damage)
     {
         setIsAlive(false);
     }
+}
+
+void Agent::newMovementPlan()
+{
+    --m_movementPlan;
+    if (m_movementPlan > 0)
+    {
+        return;
+    }
+
+    double newHorizSpeed = (randInt(0, 1) == 0) ? randInt(-Y_SPEED_UPPER_BOUND, -Y_SPEED_LOWER_BOUND) : randInt(Y_SPEED_LOWER_BOUND, Y_SPEED_UPPER_BOUND);
+    setHorizSpeed(newHorizSpeed);
+    m_movementPlan = randInt(MOVEMENT_PLAN_LOWER_BOUND, MOVEMENT_PLAN_UPPER_BOUND);
+
+    if (getHorizSpeed() < 0)
+    {
+        setDirection(LEFT_DIR);
+    }
+    else
+    {
+        setDirection(RIGHT_DIR);
+    }
+}
+
+int Agent::getMovementPlan() const
+{
+    return m_movementPlan;
+}
+void Agent::setMovementPlan(int movementPlan)
+{
+    m_movementPlan = movementPlan;
 }
 
 GhostRacer::GhostRacer(StudentWorld *ptr)
@@ -190,14 +221,14 @@ void GhostRacer::doSomething()
         return;
     }
     // if hitting left boundary, deal damage and turn back
-    if (getX() <= StudentWorld::LEFT_EDGE && getDirection() > up)
+    if (getX() <= StudentWorld::ROAD_LEFT_EDGE && getDirection() > up)
     {
         takeDamage(BORDER_DMG);
         setDirection(REBOUND_RIGHT_DIR);
         getWorld()->playSound(SOUND_VEHICLE_CRASH);
     }
     // if hitting right boundary, deal damage and turn back
-    else if (getX() >= StudentWorld::RIGHT_EDGE && getDirection() < up)
+    else if (getX() >= StudentWorld::ROAD_RIGHT_EDGE && getDirection() < up)
     {
         takeDamage(BORDER_DMG);
         setDirection(REBOUND_LEFT_DIR);
@@ -229,7 +260,6 @@ void GhostRacer::applyUserInput()
 {
     int ch;
     // if user presses key, change car action
-    //TODO: holy water spraying
     if (getWorld()->getKey(ch))
     {
         switch (ch)
@@ -376,7 +406,7 @@ void WaterGoodie::incrementStat()
 }
 
 Pedestrian::Pedestrian(StudentWorld *ptr, int imageID, double startX, double startY, double size)
-    : Agent(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, START_Y_SPEED, imageID, startX, startY, START_DIR, size, INIT_HP), m_movementPlan(INIT_MOVEMENT_PLAN) {}
+    : Agent(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, START_Y_SPEED, imageID, startX, startY, START_DIR, size, INIT_HP) {}
 Pedestrian::~Pedestrian() {}
 
 void Pedestrian::doSomething()
@@ -399,29 +429,7 @@ void Pedestrian::doSomething()
         setIsAlive(false);
         return;
     }
-    setMovementPlan();
-}
-
-void Pedestrian::setMovementPlan()
-{
-    if (m_movementPlan > 0)
-    {
-        --m_movementPlan;
-        return;
-    }
-
-    double newHorizSpeed = (randInt(0, 1) == 0) ? randInt(-Y_SPEED_UPPER_BOUND, -Y_SPEED_LOWER_BOUND) : randInt(Y_SPEED_LOWER_BOUND, Y_SPEED_UPPER_BOUND);
-    setHorizSpeed(newHorizSpeed);
-    m_movementPlan = randInt(MOVEMENT_PLAN_LOWER_BOUND, MOVEMENT_PLAN_UPPER_BOUND);
-
-    if (getHorizSpeed() < 0)
-    {
-        setDirection(LEFT_DIR);
-    }
-    else
-    {
-        setDirection(RIGHT_DIR);
-    }
+    newMovementPlan();
 }
 
 HumanPedestrian::HumanPedestrian(StudentWorld *ptr, double startX, double startY)
@@ -491,7 +499,7 @@ void ZombiePedestrian::onCollideWater()
         if (!isOverlappingGR() && randInt(1, 5) == 1)
         {
             HealGoodie *healGoodie = new HealGoodie(getWorld(), getX(), getY());
-            getWorld()->addActor(healGoodie); //TODO: not sure if this works or not
+            getWorld()->addActor(healGoodie);
         }
         getWorld()->increaseScore(SCORE_INCREMENT);
     }
@@ -544,10 +552,164 @@ void HolyWater::doSomething()
 }
 void HolyWater::move()
 {
-    moveForward(SPRITE_HEIGHT); //TODO: check double/int on speeds and positions
+    moveForward(SPRITE_HEIGHT);
     updateTravel();
 }
 void HolyWater::updateTravel()
 {
     m_travel += SPRITE_HEIGHT;
+}
+
+ZombieCab::ZombieCab(StudentWorld *ptr, double startYSpeed, double startX, double startY)
+    : Agent(ptr, CAN_COLLIDE_GR, CAN_COLLIDE_WATER, startYSpeed, IID_ZOMBIE_CAB, startX, startY, START_DIR, SIZE, INIT_HP), m_hasDamagedGR(DAMAGED_GR) {}
+ZombieCab::~ZombieCab() {}
+
+void ZombieCab::onCollideGR()
+{
+    // only collide if hasnt collided previously
+    if (m_hasDamagedGR)
+    {
+        return;
+    }
+    // deal dmg to GR
+    getWorld()->playSound(SOUND_VEHICLE_CRASH);
+    getWorld()->getGR()->takeDamage(DMG_TO_GR);
+
+    // calculate new speed and direction
+    double deltaX = getX() - getWorld()->getGR()->getX();
+
+    // if cab to right
+    if (deltaX > 0)
+    {
+        setHorizSpeed(POST_COLLISION_X_SPEED);
+        setDirection(POST_COLLISION_RIGHT_DIR - getRandomDirectionShift());
+    }
+    // cab to left or same X
+    else
+    {
+        setHorizSpeed(-POST_COLLISION_X_SPEED);
+        setDirection(POST_COLLISION_LEFT_DIR + getRandomDirectionShift());
+    }
+
+    m_hasDamagedGR = true;
+}
+void ZombieCab::onCollideWater()
+{
+    takeDamage(HolyWater::DAMAGE);
+
+    if (getHP() < 0)
+    {
+        // set alive to false taken care of by takeDamage
+        getWorld()->playSound(SOUND_VEHICLE_DIE);
+        // 1/5 chance of adding oil slick
+        if (randInt(1, 5) == 1)
+        {
+            OilSlick *oil = new OilSlick(getWorld(), getX(), getY());
+            getWorld()->addActor(oil);
+        }
+        // increment score and return
+        getWorld()->increaseScore(SCORE_INCREMENT);
+        return;
+    }
+    else
+    {
+        // if not dead, play hurt sound
+        getWorld()->playSound(SOUND_VEHICLE_HURT);
+    }
+}
+void ZombieCab::doSomething()
+{
+    if (!isAlive())
+    {
+        return;
+    }
+
+    if (isOverlappingGR())
+    {
+        onCollideGR();
+    }
+
+    move();
+    if (isOffScreen())
+    {
+        setIsAlive(false);
+        return;
+    }
+
+    // make vert speed change and return if change made
+    if (vertSpeedAdjustment())
+    {
+        return;
+    };
+
+    newMovementPlan();
+}
+
+double ZombieCab::getRandomDirectionShift() const
+{
+    return randInt(0, RAND_DIRECTION_RANGE - 1);
+}
+
+bool ZombieCab::vertSpeedAdjustment()
+{
+    double deltaYSpeed = getVertSpeed() - getWorld()->getGR()->getVertSpeed();
+    // don't do anything if cab not in a lane
+    if (getLane() == -1)
+    {
+        return false;
+    }
+    if (deltaYSpeed > 0 && getWorld()->directionalDistanceClosetCAWActor(this, true) < SAFE_DIST)
+    {
+        setVertSpeed(getVertSpeed() - Y_SPEED_INCREMENT);
+        return true;
+    }
+    else if (deltaYSpeed <= 0 && getWorld()->directionalDistanceClosetCAWActor(this, false) < SAFE_DIST)
+    {
+        setVertSpeed(getVertSpeed() + Y_SPEED_INCREMENT);
+        return true;
+    }
+
+    return false;
+}
+
+int ZombieCab::getLane() const
+{
+    // left Lane
+    if (getX() >= StudentWorld::ROAD_LEFT_EDGE && getX() < StudentWorld::LEFT_DIVIDER_X)
+    {
+        return 1;
+    }
+    // mid lane
+    else if (getX() >= StudentWorld::LEFT_DIVIDER_X && getX() < StudentWorld::RIGHT_DIVIDER_X)
+    {
+        return 2;
+    }
+
+    // right lane
+    else if (getX() >= StudentWorld::RIGHT_DIVIDER_X && getX() < StudentWorld::ROAD_RIGHT_EDGE)
+    {
+        return 3;
+    }
+    // not on the road
+    else
+    {
+        return -1;
+    }
+}
+
+void ZombieCab::newMovementPlan()
+{
+    setMovementPlan(getMovementPlan() - 1);
+    if (getMovementPlan() > 0)
+    {
+        return;
+    }
+
+    setMovementPlan(randInt(MOVEMENT_PLAN_LOWER_BOUND, MOVEMENT_PLAN_UPPER_BOUND));
+    setVertSpeed(getVertSpeed() + getRandomSpeedModifier());
+}
+
+double ZombieCab::getRandomSpeedModifier() const
+{
+    return randInt(-MOVEMENT_PLAN_SPEED_MODIFER, MOVEMENT_PLAN_SPEED_MODIFER);
 }

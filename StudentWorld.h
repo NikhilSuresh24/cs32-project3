@@ -17,10 +17,14 @@ public:
     static const int START_LAST_BORDER_Y = 0;
     static const int N_YELLOW_LINES = VIEW_HEIGHT / SPRITE_HEIGHT;
     static const int M_WHITE_LINES = VIEW_HEIGHT / (4 * SPRITE_HEIGHT);
-    static constexpr double LEFT_EDGE = ROAD_CENTER - ROAD_WIDTH / 2;
-    static constexpr double RIGHT_EDGE = ROAD_CENTER + ROAD_WIDTH / 2;
-    static constexpr double MID_LEFT_X = LEFT_EDGE + ROAD_WIDTH / 3;
-    static constexpr double MID_RIGHT_X = RIGHT_EDGE - ROAD_WIDTH / 3;
+
+    static constexpr double ROAD_LEFT_EDGE = ROAD_CENTER - ROAD_WIDTH / 2;
+    static constexpr double ROAD_RIGHT_EDGE = ROAD_CENTER + ROAD_WIDTH / 2;
+    static constexpr double LEFT_DIVIDER_X = ROAD_LEFT_EDGE + ROAD_WIDTH / 3;
+    static constexpr double RIGHT_DIVIDER_X = ROAD_RIGHT_EDGE - ROAD_WIDTH / 3; 
+    static constexpr double LEFT_LANE_CENTER = ROAD_CENTER - ROAD_WIDTH / 3;
+    static constexpr double RIGHT_LANE_CENTER = ROAD_CENTER + ROAD_WIDTH / 3;
+    static const int NUM_LANES = 3;
 
     // constructor, destructor, essential methods
     StudentWorld(std::string assetPath);
@@ -31,11 +35,11 @@ public:
 
     GhostRacer *getGR() const;
     void soulSaved();
-    void endLevel();
     void humanHit();
-    void resetHumanHit();
     void addActor(Actor *actor);
-    bool checkProjectileHit(HolyWater *projectile);
+    bool checkProjectileHit(HolyWater *projectile); // TODO: could be const
+    double distanceClosestCAWActor(double xMin, double xMax, double y) const;
+    double directionalDistanceClosetCAWActor(const ZombieCab *cab, bool inFront) const;
 
 private:
     GhostRacer *m_gr;
@@ -56,7 +60,9 @@ private:
     void addWaterGoodie();
     void addHuman();
     void addZombiePed();
-    bool shouldCreateActor(int chance);
+    void addZombieCab();
+    bool shouldCreateActor(int chance) const;
+    double getCabSpeedModifier() const;
 
     void updateLastBorderY();
     void setStats();
@@ -64,6 +70,8 @@ private:
     int soulsRequired() const;
     double getRandomRoadX() const;
     double getRandomScreenX() const;
+    void resetHumanHit();
+
 };
 
 #endif // STUDENTWORLD_H_

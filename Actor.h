@@ -10,7 +10,6 @@ class Actor : public GraphObject
 public:
     static constexpr double X_SCALE = 0.25;
     static constexpr double Y_SCALE = 0.6;
-    static const int NO_HP = -1;
 
     Actor(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, bool isCAW, double startXSpeed, double startYSpeed, int imageID, double startX, double startY, int dir, double size, unsigned int depth);
     virtual ~Actor();
@@ -21,10 +20,10 @@ public:
     double getHorizSpeed() const;
     double getVertSpeed() const;
     bool isAlive() const;
-    bool getCAW() const;
+    bool isCAW() const;
     bool isOffScreen() const;
-    bool isOverlapping(const Actor &other);
-    bool isOverlappingGR();
+    bool isOverlapping(const Actor *other) const;
+    bool isOverlappingGR() const;
 
     void setHorizSpeed(double speed);
     void setVertSpeed(double speed);
@@ -55,16 +54,28 @@ public:
     static const unsigned int DEPTH = 0;
     static constexpr double START_X_SPEED = 0;
 
+    static const int INIT_MOVEMENT_PLAN = 0;
+    static const int Y_SPEED_UPPER_BOUND = 3;
+    static const int Y_SPEED_LOWER_BOUND = 1;
+    static const int MOVEMENT_PLAN_LOWER_BOUND = 4;
+    static const int MOVEMENT_PLAN_UPPER_BOUND = 32;
+    static const int LEFT_DIR = 180;
+    static const int RIGHT_DIR = 0;
+
     Agent(StudentWorld *ptr, bool canCollideGR, bool canCollideWater, double startYSpeed, int imageID, double startX, double startY, int dir, double size, double startHP);
     virtual ~Agent();
 
     int getHP() const;
     void healHP(int heal);
     void takeDamage(int damage);
+    virtual void newMovementPlan();
+    int getMovementPlan() const;
+    void setMovementPlan(int movementPlan);
 
 private:
     int m_initHp;
     int m_hp;
+    int m_movementPlan;
 };
 
 class GhostRacer : public Agent
@@ -240,25 +251,12 @@ public:
     static const int START_DIR = 0;
     static const bool CAN_COLLIDE_GR = true;
     static const bool CAN_COLLIDE_WATER = true;
-    static const int INIT_MOVEMENT_PLAN = 0;
-
-    static const int Y_SPEED_UPPER_BOUND = 3;
-    static const int Y_SPEED_LOWER_BOUND = 1;
-    static const int MOVEMENT_PLAN_LOWER_BOUND = 4;
-    static const int MOVEMENT_PLAN_UPPER_BOUND = 32;
-    static const int LEFT_DIR = 180;
-    static const int RIGHT_DIR = 0;
 
     Pedestrian(StudentWorld *ptr, int imageID, double startX, double startY, double size);
     virtual ~Pedestrian();
 
     virtual void doSomething();
     virtual void aggroGR() = 0; // only used by Zombie Ped
-
-private:
-    int m_movementPlan;
-
-    void setMovementPlan();
 };
 
 class HumanPedestrian : public Pedestrian
@@ -269,7 +267,7 @@ public:
     HumanPedestrian(StudentWorld *ptr, double startX, double startY);
     virtual ~HumanPedestrian();
 
-    void aggroGR(); // human doesn't aggro GR, so will be empty
+    virtual void aggroGR(); // human doesn't aggro GR, so will be empty
     virtual void onCollideGR();
     virtual void onCollideWater();
 };
@@ -290,7 +288,7 @@ public:
     ZombiePedestrian(StudentWorld *ptr, double startX, double startY);
     virtual ~ZombiePedestrian();
 
-    void aggroGR();
+    virtual void aggroGR();
     virtual void onCollideGR();
     virtual void onCollideWater();
 
@@ -325,5 +323,41 @@ private:
     double m_travel;
 
     void updateTravel();
+};
+
+class ZombieCab : public Agent
+{
+public:
+    static const bool CAN_COLLIDE_GR = true;
+    static const bool CAN_COLLIDE_WATER = true;
+    static const int START_DIR = 90;
+    static const bool DAMAGED_GR = false;
+    static const int INIT_HP = 3;
+    static constexpr double SIZE = 4.0;
+    static const int SCORE_INCREMENT = 200;
+    static const int DMG_TO_GR = 20;
+    static constexpr double POST_COLLISION_X_SPEED = 5.0;
+    static const int POST_COLLISION_RIGHT_DIR = 60;
+    static const int POST_COLLISION_LEFT_DIR = 120;
+    static const int RAND_DIRECTION_RANGE = 20;
+    static constexpr double Y_SPEED_INCREMENT = 0.5;
+    static constexpr double SAFE_DIST = 96.0; // # pixels diff between nearest CAW
+    static constexpr int MOVEMENT_PLAN_SPEED_MODIFER = 2;
+
+    ZombieCab(StudentWorld *ptr, double startYSpeed, double startX, double startY);
+    ~ZombieCab();
+
+    virtual void onCollideGR();
+    virtual void onCollideWater();
+    virtual void doSomething();
+    virtual void newMovementPlan();
+    int getLane() const;
+
+private:
+    bool m_hasDamagedGR;
+
+    double getRandomDirectionShift() const;
+    bool vertSpeedAdjustment();
+    double getRandomSpeedModifier() const;
 };
 #endif // ACTOR_H_
